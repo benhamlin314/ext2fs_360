@@ -142,32 +142,46 @@ int change_dir(char *path){
 int rpwd(INODE *ip){
   get_block(dev,ip->i_block[0], buf);
 
+  //Load Buf
   char *cp = buf;
   dp = (DIR *)buf;
-  cp += dp->rec_len;
-  dp = (DIR *)cp;//dp points to ..
-  char *tempname;
-  tempname = (char *)malloc(sizeof(dp->name) +1);
-  strcpy(tempname,dp->name);
-  tempname[dp->name_len] = 0;
+  
+  char charArray[256];
+
+  //Begin Move Process
   int temp = dp->inode;
+  cp += dp->rec_len; //Moving To ..
+  dp = (DIR *)cp;
+
+  //Grab Parent
   mip = iget(dev,dp->inode);
-  printf("ino = %d\n", dp->inode);
-
+  //Grab Block
   get_block(dev,mip->i_block[0], buf);
-
+  //Load Buf
   cp = buf;
   dp = (DIR *)buf;
+  DIR *dp2;
+  cp += dp->rec_len;
+  dp2 = (DIR *)cp;
+  DIR *dp3;
+  dp3=dp2;
+  while(temp != dp3->inode){
+    cp += dp3->rec_len;
+    dp3 = (DIR *)cp;
+  }
 
-  if(dp->inode == 2){
+  //Load Name Into charArray[] And Add NULL Char
+  strcpy(charArray,dp3->name);
+  charArray[dp3->name_len] = 0;
+  
+  //Begin Loop Process
+  if(dp->inode == dp2->inode){ //Check . Against ..
     printf("/");
-    free(tempname);
     return 0;
   }
   else{
-    rpwd(mip);
-    printf("%s/",tempname);
-    free(tempname);
+    rpwd(mip); //Otherwise Recursive Call Memory INODE Pointer
+    printf("%s/",charArray);
   }
 }
 
