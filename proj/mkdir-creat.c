@@ -1,27 +1,60 @@
 #inlcude "globals.h"
+
+//Globals
+MINODE minode[NMINODE];
+MINODE *root;
+
+PROC   proc[NPROC], *running;
+MNTABLE mntable, *mntPtr;
+
+SUPER *sp;
+GD    *gp;
+INODE *ip;
+
+int fd, dev;
+int nblocks, ninodes, bmap, imap, iblk;
+char line[128], cmd[32], pathname[64];
+
+char gpath[128];   // hold tokenized strings
+char *name[64];    // token string pointers
+int  n;            // number of token strings 
+
+//Functions
 int make_dir(){
-  //Parse Pathname
-  //Determine Root Or CWD
-  //Parent INODE (pino) = getino(dev,dirname(Pathname));
-  //Parent INODE Pointer (pip) = iget(dev,Parent INODE);
+  char *parent;
+  char *child;
 
-  //Verify: That Parent INODE (pino) is a DiR
-  //        No Child Exists In Parent Directory
-
-
-  //After Verification Call mymkdir(Parent Inode Pointer)
-  //Increment Parents INODES's Link Count By 1
-  //Touch atime And Mark It DIRTY
-  
-  //Then Call iput And Pass Parent INODE Pointer(pip)
+  //System Calls To Tokenize Pathname
+  parent = dirname(pathname);
+  child = basename(pathname);
+ 
+  //Get INODE Number
+  int pino = getino(dev,parent);
+  //Get INODE Itself
+  MINODE *pip = iget(dev,pino);
+  if(pip->i_mode == 0x41ED){ //Is Dir 
+    mymkdir(pip);
+    //Update pip
+    pip->i_links_count++;
+    pip->dirty = 1;
+    //Touch a_time ;)
+    pip->i_atime = time(0L);
+    iput(pip);
+  }
+  else{ //Is Not DIR
+    printf("Parent Is Not A Directory\n");
+    return -1;
+  }  
 }
 int mymkdir(MINODE *pip, char *name){
-  //Parent INODE Pointer Points At The Parents MINODE[] Of Dirname "/A/B", The Name Is String Basename "c"
+  
+  
   //Allocate An INODE AND DiskBlock For The New Directoy To Utilize
-  //Specifically ino = ialloc(dev), bno = balloc(dev)
+  int ino = ialloc(dev); //Number For INODE 
+  int bno = balloc(dev); //Number For BlockNumber
 
   //mip = get(dev,ino); To Load The INODE Into A MINODE[] (This Is So You Can Write To The INODE In Memory)
-  mip = iget(dev,ino);
+  MINODE *mip = iget(dev,ino);
   
   //Overwtie Contents In mip->INODE To Make It A Dir
   INODE *ip = &mip->INODE;
@@ -33,7 +66,7 @@ int mymkdir(MINODE *pip, char *name){
   ip->i_atime = i_ctime = i_mtime = time(0L);  //Set to current time
   ip->i_blocks = 2;                            // LINUX: Blocks count in 512-byte chunks 
   ip->i_block[0] = bno;                        // new DIR has one data block   
-  for(i = 1; i <= 14; i++){
+  for(int i = 1; i <= 14; i++){
     ip->i_block[i]=0;                          //Set i_blocks Equal To Zero
   }
   mip->dirty = 1;
@@ -43,6 +76,31 @@ int mymkdir(MINODE *pip, char *name){
 
   //Now Begin The Process For Creating Data Blocks For The New Dir Containing . And ..
   //Write . and .. entries into a buf[] of BLKSIZE (1024)
+  char tempname[EXT2_NAME_LEN];
+  char buf[1024];
+  char *cp = buf;
+  DIR *dp;
+  
+  tempname[0] = '.';
+  strcpy(dp->name, tempname);
+  dp->rec_len = 12;
+  dp->name_len = 1; //Needs To Be 1 Byte
+  dp->inode = ino;
+  buf[cp] = *dp; 
+  
+  char buf2[1024];
+  DIR *dp2;
+  get_block(dev,pip->i_block[0] ,buf2);
+  dp2 = (DIR *)buf2;
+  
+  cp = dp->rec_len; //Increment cp       
+  
+  tempname[1] = '.';
+  strcpy(dp->name,tempname);
+  dp->rec_len = 1012;
+  dp->name_len = 2;
+  dp->inode = dp2->inode;
+  buf[cp] = *dp;
   
 
   //Enter The Name ENTRY Into The Parent's Directory
