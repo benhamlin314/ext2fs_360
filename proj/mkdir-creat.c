@@ -32,13 +32,15 @@ int make_dir(){
   int pino = getino(dev,parent);
   //Get INODE Itself
   MINODE *pip = iget(dev,pino);
-  if(pip->i_mode == 0x41ED){ //Is Dir 
+  
+  if(pip->INODE.i_mode == 0x41ED){ //Is Dir 
+  //*********** add check to see if child already exists
     mymkdir(pip);
     //Update pip
-    pip->i_links_count++;
+    pip->INODE.i_links_count++;
     pip->dirty = 1;
     //Touch a_time ;)
-    pip->i_atime = time(0L);
+    pip->INODE.i_atime = time(0L);
     iput(pip);
   }
   else{ //Is Not DIR
@@ -50,11 +52,11 @@ int mymkdir(MINODE *pip, char *name){
   
   
   //Allocate An INODE AND DiskBlock For The New Directoy To Utilize
-  int ino = ialloc(dev); //Number For INODE 
-  int bno = balloc(dev); //Number For BlockNumber
+  int ino = ialloc(pip->dev); //Number For INODE 
+  int bno = balloc(pip->dev); //Number For BlockNumber
 
   //mip = get(dev,ino); To Load The INODE Into A MINODE[] (This Is So You Can Write To The INODE In Memory)
-  MINODE *mip = iget(dev,ino);
+  MINODE *mip = iget(pip->dev,ino);
   
   //Overwtie Contents In mip->INODE To Make It A Dir
   INODE *ip = &mip->INODE;
@@ -77,41 +79,45 @@ int mymkdir(MINODE *pip, char *name){
   //Now Begin The Process For Creating Data Blocks For The New Dir Containing . And ..
   //Write . and .. entries into a buf[] of BLKSIZE (1024)
   char tempname[EXT2_NAME_LEN];
-  char buf[1024];
+  char buf[BLKSIZE];
   char *cp = buf;
-  DIR *dp;
+  DIR *dp = (DIR *)buf;
   
   tempname[0] = '.';
   strcpy(dp->name, tempname);
   dp->rec_len = 12;
   dp->name_len = 1; //Needs To Be 1 Byte
   dp->inode = ino;
-  buf[cp] = *dp; 
   
-  char buf2[1024];
-  DIR *dp2;
-  get_block(dev,pip->i_block[0] ,buf2);
-  dp2 = (DIR *)buf2;
-  
-  cp = dp->rec_len; //Increment cp       
+  cp += dp->rec_len; //Increment cp
+	dp = (DIR *) cp;
   
   tempname[1] = '.';
   strcpy(dp->name,tempname);
-  dp->rec_len = 1012;
+  dp->rec_len = BLKSIZE-12;
   dp->name_len = 2;
-  dp->inode = dp2->inode;
-  buf[cp] = *dp;
+  findino(pip, &dp->inode);
+
   
+  //puts block
+  put_block(pip->dev,bno, buf);
 
   //Enter The Name ENTRY Into The Parent's Directory
   enter_name(pip,ino,name);
 }
 int enter_name(MINODE *pip, int myino, char *myname){
   char buf[1024];
-  for(int i = 0; i < 12; i++){
-    if(pip->i_block[i]==0) 
+  char * cp;
+  DIR * dp;
+  INODE * ip = &pip->INODE;
+  int allonew = 0; //flag to see if you need to allocate new block
+  int i = 0;	//allocated outside forloop to keep value of next empty block
+  for(i = 0; i < 12; i++){
+    if(ip->i_block[i]==0){
+		allonew = 1;
       break;
-    get_block(dev,pip->i_block[i],buf);
+	}
+    get_block(pip->dev,ip->i_block[i],buf);
   
   //Traverse Through Till The Last Entry In Data Block
   //Get Parents ith Data Block Into A buf[]
@@ -119,24 +125,48 @@ int enter_name(MINODE *pip, int myino, char *myname){
     dp = (DIR *)buf;
     
     printf("Step To Last Entry In Data Block %d\n",i);
-    char c;
     while(cp + dp->rec_len < buf + BLKSIZE){
       //Increment
       cp += dp->rec_len;
       dp = (DIR *)cp;
     }
-
-    
-
-
+	
+	int needed_length = 4*((8+strlen(myname)+3)/4);
+	int ideal_length = (4*((8+dp->name_len + 3)/4));
+    int remain = dp->rec_len - ideal_length;
+	
+	if (remain >= needed_length){
+		dp->rec_len = ideal_length;
+		cp += dp->rec_len;
+		//increments dp to the empty DIR structure
+		dp = (DIR *)cp; 
+		dp->inode = myino;
+		dp->rec_len = remain;
+		dp->name_len = strlen(myname);
+		strcpy(dp->name, myname);
+		break;
+	}
+  }
+  //END FOR LOOP
 
 
   //If You Reach Here There Is No Space In The Existing Data Blocks
-  //Allocate a  new data block, Then Increase Parent's isze by 1024;
+  //Allocate a  new data block, Then Increase Parent's size by 1024;
   //Enter The New Entry As The First Entry In The New Data Block With rec_len=BLKSIZE
-
+	if(allonew){//if allonew is 1 then allocate new block
+		int bno = balloc(pip->dev);
+		ip->i_size += BLKSIZE;
+		ip->i_block[i] = bno;
+		get_block(pip->dev, ip->i_block[i], buf);
+		cp = buf;
+		dp = (DIR *)buf;
+		dp->inode = myino;
+		dp->rec_len = BLKSIZE;
+		dp->name_len = strlen(myname);
+		strcpy(dp->name, myname);
+	}
   //Write The Data Block To The Disk
-  
+  put_block(pip->dev, ip->i_block[i], buf);
 }
 int creat_file(){
 
