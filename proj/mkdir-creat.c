@@ -106,36 +106,29 @@ int mymkdir(MINODE *pip, char *name){
   //Enter The Name ENTRY Into The Parent's Directory
   enter_name(pip,ino,name);
 }
-int enter_name(MINODE *pip, into myino, char *myname){
-  int i = 0;
-  for(i = 0; i < 12; i++){
-    if(i_block[i]==0) 
-      BREAK;
-  }
-
-  //Get The Parent's Data Block In A buf[]
-
-  //Worth Noting IDEAL_LEN = 4*[(8+name_len+3)/4]
+int enter_name(MINODE *pip, int myino, char *myname){
+  char buf[1024];
+  for(int i = 0; i < 12; i++){
+    if(pip->i_block[i]==0) 
+      break;
+    get_block(dev,pip->i_block[i],buf);
   
-
   //Traverse Through Till The Last Entry In Data Block
   //Get Parents ith Data Block Into A buf[]
-  cp = buf;
-  dp = (DIR *)buf;
+    cp = buf;
+    dp = (DIR *)buf;
+    
+    printf("Step To Last Entry In Data Block %d\n",i);
+    char c;
+    while(cp + dp->rec_len < buf + BLKSIZE){
+      //Increment
+      cp += dp->rec_len;
+      dp = (DIR *)cp;
+    }
 
-  printf("Step To Last Entry In Data Block %d\n",blk);
-  while(cp + dp->rec_len < buf + BLKSIZE){
-    //Print And Set
-    c = dp->name[dp->name_len];
-    dp->name[dp->name_len] = 0;
-    printf("%s ", dp->name);
-    dp->name[dp->name_len] = name; //Is This Correct?
+    
 
 
-    //Increment
-    cp += dp->rec_len;
-    dp = (DIR *)cp;
-  }
 
 
   //If You Reach Here There Is No Space In The Existing Data Blocks
