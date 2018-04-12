@@ -42,7 +42,7 @@ int search(INODE *ip, char *name){
 }
 
 
-int findmyname(MINODE *parent, u32 myino, char *myname) 
+int getmyname(MINODE *parent, int myino, char *myname) 
 {
  int i;
  char buf[BLKSIZE], temp[256], *cp;  
@@ -76,7 +76,7 @@ int findmyname(MINODE *parent, u32 myino, char *myname)
 }
 
 
-int findino(MINODE *mip, u32 *myino) 
+int findino(MINODE *mip, int *myino) 
 {
   char buf[BLKSIZE], *cp;   
   DIR *dp;

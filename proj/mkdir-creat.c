@@ -35,7 +35,7 @@ int make_dir(){
   
   if(pip->INODE.i_mode == 0x41ED){ //Is Dir 
   //*********** add check to see if child already exists
-    mymkdir(pip);
+    mymkdir(pip, child);
     //Update pip
     pip->INODE.i_links_count++;
     pip->dirty = 1;
@@ -58,7 +58,7 @@ int mymkdir(MINODE *pip, char *name){
   //mip = get(dev,ino); To Load The INODE Into A MINODE[] (This Is So You Can Write To The INODE In Memory)
   MINODE *mip = iget(pip->dev,ino);
   
-  //Overwtie Contents In mip->INODE To Make It A Dir
+  //Overwrite Contents In mip->INODE To Make It A Dir
   INODE *ip = &mip->INODE;
   ip->i_mode = 0x41ED;                         //Or 040755 (DIR Type With Permissions)
   ip->i_uid = running->uid;                    //Owner uid
