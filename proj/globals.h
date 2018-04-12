@@ -10,7 +10,7 @@ extern INODE *ip;
 extern DIR *dp, *mdp;
 
 extern int fd, dev;
-extern int nblocks, ninodes, bmap, imap, iblk;
+extern int nblocks, ninodes, bmap, imap, iblk;//might remove once get to level 3 these will be contained in mtable
 extern char line[128], cmd[32], pathname[64];
 
 extern char gpath[128];   // hold tokenized strings
