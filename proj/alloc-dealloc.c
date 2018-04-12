@@ -128,18 +128,18 @@ int balloc(int dev){
 	return 0;
 }
 
-int idealloc(int dev, int ino){
+int idealloc(int dev, int ino){//assumes inode is empty as in all blocks deallocated in inode
 	char buf[BLKSIZE];
-
+	
 	// read inode_bitmap block
 	get_block(dev, imap, buf);
 	clr_bit(buf,ino);
 	incFreeInodes(dev)
 	
-	
+	put_block(dev, imap, buf);
 }
 
-int bdealloc(int dev, int bno){
+int bdealloc(int dev, int bno){//assumes block is empty as in all inodes deallocated in block
 	char buf[BLKSIZE];
 
 	// read block_bitmap block
@@ -147,5 +147,5 @@ int bdealloc(int dev, int bno){
 	clr_bit(buf,bno);
 	incFreeBlocks(dev);
 	
-	
+	put_block(dev, bmap, buf);
 }
