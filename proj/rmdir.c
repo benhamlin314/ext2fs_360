@@ -44,7 +44,7 @@ int rmdir(char *pathname){
 		
 		pip = iget(mip->dev, dp->inode);//dp already points to ..
 		char myname[256];
-		getmyname(pip, mip->ino, myname);
+		getmyname(pip, mip->ino, &myname);
 		rm_child(pip, myname);
 	}
 }
@@ -59,7 +59,7 @@ int rm_child(MINODE * parent, char *name){
 		get_block(parent->dev, ip->i_block[i], buf);
 		cp = buf;
 		dp = (DIR *)cp;
-		while(cp < buf +BLKSIZE){
+		while(cp < buf + BLKSIZE){
 			c = dp->name[dp->name_len];
 			dp->name[dp->name_len] = 0;
 			if(strcmp(dp->name,name) == 0){
@@ -77,6 +77,9 @@ int rm_child(MINODE * parent, char *name){
 	
 	if(dp->rec_len == BLKSIZE){//beginning of block
 		bdealloc(parent->dev, ip->i_block[i]);
+		while(ip->i_block[i+1] != 0){
+			ip->i_block[i] = ip->i_block[i+1];
+		}
 	}
 	else if(c + dp->rec_len == BLKSIZE){//end of block
 		dpprev->rec_len += dep->rec_len;
@@ -86,6 +89,21 @@ int rm_child(MINODE * parent, char *name){
 		dp->name = 0;
 	}
 	else {//somewhere in the middle
+		dpprev = dp;//make dpprev the inode you are removing
+		cp += dp->rec_len;
+		dp = (DIR *)cp;
+		while(cp < buf + BLKSIZE){
+			dpprev->ino = dp->ino;
+			dpprev->rec_len = dp->rec_len;
+			dpprev->name_len = dp->name_len;
+			c = dp->name[dp->name_len];
+			dp->name[dp->name_len] = 0;
+			strcpy(dpprev->name,dp->name);
+			dp->name[dp->name_len] = c;
+			dpprev = dp;
+			cp += dp->rec_len;
+			dp = (DIR *)cp;
+		}
 		
 	}
 	put_block(parent->dev,ip->i_block[i],buf);
