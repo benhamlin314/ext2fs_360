@@ -13,7 +13,7 @@ int rmdir(char *pathname){
 	mip = iget(dev, ino);
 	
 	ip = &(mip->INODE);
-	if(ip->i_uid == getuid() || getuid() == 0){//checks to see if user owns dir or if user is super user getuid() is a systemcall
+	if(ip->i_uid == running->uid || running->uid == 0){//checks to see if user owns dir or if user is super user getuid() is a systemcall
 		if(ip->i_mode != 0x41ED || mip->dirty == 1 || ip->i_links_count >= 2){//checks if not a dir or busy or not empty
 			if(ip->i_links_count == 2 && ip->i_mode == 0x41ED && mip->dirty == 0){
 				char *cp;

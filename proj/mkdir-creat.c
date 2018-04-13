@@ -1,23 +1,5 @@
-#inlcude "globals.h"
-
-//Globals
-MINODE minode[NMINODE];
-MINODE *root;
-
-PROC   proc[NPROC], *running;
-MNTABLE mntable, *mntPtr;
-
-SUPER *sp;
-GD    *gp;
-INODE *ip;
-
-int fd, dev;
-int nblocks, ninodes, bmap, imap, iblk;
-char line[128], cmd[32], pathname[64];
-
-char gpath[128];   // hold tokenized strings
-char *name[64];    // token string pointers
-int  n;            // number of token strings 
+#include "globals.h"
+#include "type.h
 
 //Functions
 int make_dir(){
@@ -169,8 +151,55 @@ int enter_name(MINODE *pip, int myino, char *myname){
   put_block(pip->dev, ip->i_block[i], buf);
 }
 int creat_file(){
+  char *parent;
+  char *child;
 
+  //System Calls To Tokenize Pathname                                                                                                                                                                       
+  parent = dirname(pathname);
+  child = basename(pathname);
+
+  //Get INODE Number                                                                                                                                                                                        
+  int pino = getino(dev,parent);
+  //Get INODE Itself                                                                                                                                                                                        
+  MINODE *pip = iget(dev,pino);
+  if(pip->i_mode == 0x41ED){ //Parent Is Dir                                                                                                                                                                       
+    my_creat(pip);
+    //Update pip                                                                                                                                                                                            
+    //Dont Increment Parent Count
+    pip->dirty = 1; //Set To Dirty
+    
+    //Touch a_time                                                                                                                                                                           
+    pip->i_atime = time(0L);
+    iput(pip);
+  }
+  else{ //Parent Is Not DIR                                                                                                                                                                                
+    printf("Parent Is Not A Directory Cannot Place File\n");
+    return -1;
+  }
 }
+
 int my_creat(MINODE *pip, char *name){
+  //Allocate An INODE AND DiskBlock For The New Directoy To Utilize                                                                                                                                         
+  int ino = ialloc(dev); //Number For INODE                                                                                                                                      
 
+  //mip = get(dev,ino); To Load The INODE Into A MINODE[] (This Is So You Can Write To The INODE In Memory)                                                                                                 
+  MINODE *mip = iget(dev,ino);
+
+  //Overwtie Contents In mip->INODE To Make It A Dir                                                                                                                                                        
+  INODE *ip = &mip->INODE;
+  ip->i_mode = 0x81A4;                         //Or 040755 (DIR Type With Permissions)                                                 
+  ip->i_uid = running->uid;                    //Owner uid                                                                                                                                                 
+  ip->i_gid  = running->gid;                   //Group Id                                                                                                                                                  
+  ip->i_size = 0;                        //Size in bytes                                                                                                                                             
+  ip->i_links_count = 1;                       //Links count=2 because of . and ..                                                                                                                         
+  ip->i_atime = i_ctime = i_mtime = time(0L);  //Set to current time                                                                                                                                       
+  ip->i_blocks = 0; //Can You Do This?                            // LINUX: Blocks count in 512-byte chunks                                                                                                                   
+  //Put In THe Name In Parent Inode Pointer
+
+
+
+  mip->dirty = 1;
+  //Write The New INODE Out To Disk                                                                                                                                                    
+  iput(mip);
 }
+
