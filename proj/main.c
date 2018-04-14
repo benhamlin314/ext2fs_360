@@ -10,6 +10,7 @@
 #include "globals.h"
 
 
+
 MINODE minode[NMINODE];
 MINODE *root;
 
@@ -29,7 +30,7 @@ char gpath[128];   // hold tokenized strings
 char *name[64];    // token string pointers
 int  n;            // number of token strings 
 
-MINODE *iget(int dev, int ino)
+MINODE * iget(int dev, int ino)
 {
   printf("iget(%d %d): ", dev, ino);
   return (MINODE *)kcwiget(dev, ino);
@@ -45,9 +46,12 @@ int getino(int dev, char *pathname)
 {
   return kcwgetino(dev, pathname);
 }
-#include "util.c"
 
+#include "util.c"
 #include "ls-cd-pwd.c"
+#include "mkdir-creat.c"
+#include "alloc-dealloc.c"
+#include "rmdir.c"
 
 int init()
 {
@@ -144,7 +148,7 @@ main(int argc, char *argv[ ])
 
   //printf("hit a key to continue : "); getchar();
   while(1){
-    printf("input command : [ls|cd|pwd|quit] ");
+    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|quit] ");
     fgets(line, 128, stdin);
 
     line[strlen(line)-1] = 0;
@@ -176,6 +180,15 @@ main(int argc, char *argv[ ])
     }
     if (strcmp(cmd, "quit")==0)
        quit();
+    if(strcmp(cmd, "mkdir")==0){
+      make_dir();
+    }
+    if(strcmp(cmd, "creat")==0){
+      creat_file();
+    }
+    if(strcmp(cmd, "rmdir")==0){
+      rmdir();
+    }
   }
 }
  

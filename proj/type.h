@@ -9,7 +9,7 @@ typedef struct ext2_inode       INODE;
 typedef struct ext2_dir_entry_2 DIR;
 
 #define BLKSIZE  1024
-#define ISIZE     128
+#define ISIZE     8
 
 #define NMINODE    64
 #define NOFT       32

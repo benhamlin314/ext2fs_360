@@ -1,111 +1,135 @@
 #include "globals.h"
-#include "type.h"
 
 //This File Will House rmdir And All Related Functions.
 
-int rmdir(char *pathname){
-	MINODE *mip, *pip;
-	INODE *ip;
-	char buf[BLKSIZE];
+int rmdir(){
+  MINODE *mip, *pip;
+  INODE *ip;
+  char buf[BLKSIZE];
+  int empty=1;
 	
+  int ino = getino(dev, pathname);//currently assumes dev
+  mip = iget(dev, ino);
 	
-	int ino = getino(dev, pathname);//currently assumes dev
-	mip = iget(dev, ino);
-	
-	ip = &(mip->INODE);
-	if(ip->i_uid == running->uid || running->uid == 0){//checks to see if user owns dir or if user is super user getuid() is a systemcall
-		if(ip->i_mode != 0x41ED || mip->dirty == 1 || ip->i_links_count >= 2){//checks if not a dir or busy or not empty
-			if(ip->i_links_count == 2 && ip->i_mode == 0x41ED && mip->dirty == 0){
-				char *cp;
-				get_block(dev, ip->i_block[0], buf);
+  ip = &(mip->INODE);
+  printf("%d %d\n", ip->i_uid, running->uid);
+  if(ip->i_uid == running->uid || running->uid == 0){//checks to see if user owns dir or if user is super user getuid() is a systemcall
+    printf("User can rmdir\n");
+    if(ip->i_mode != 0x41ED || mip->dirty == 1 || ip->i_links_count >= 2){//checks if not a dir or busy or not empty
+      printf("Might be empty %d %d\n", ip->i_links_count, mip->dirty);
+      if(ip->i_links_count == 2 && ip->i_mode == 0x41ED && mip->dirty == 1){
+	printf("Checking if truly empty\n");
+	char *cp;
+	get_block(mip->dev, ip->i_block[0], buf);
 
-				cp = buf+12;
-				dp = (DIR *)cp;
+	cp = buf;
+	cp += 12;
+	dp = (DIR *)cp;
 				
-				if(dp->rec_len > 12){//dir contains files
-					empty = 0;
-				}
-				empty = 1;//flag to check empty
-			}
-			if(!empty){
-				return -1;
-			}
-		}
-		
-		int i = 0;
-		for(i = 0; i < 12; i++){//deallocate block loop
-			if(ip->i_block[i] != 0){
-				bdealloc(mip->dev, ip->i_block[i]);
-			}
-		}
-		
-		idealloc(mip->dev, mip->ino);
-		iput(mip);
-		
-		pip = iget(mip->dev, dp->inode);//dp already points to ..
-		char myname[256];
-		getmyname(pip, mip->ino, &myname);
-		rm_child(pip, myname);
+	if(dp->rec_len > 12){//dir contains files
+	  empty = 1;
 	}
+	else{
+	  empty = 0;//flag to check empty
+	}
+      }
+      if(!empty){
+	return -1;
+      }
+    }
+    printf("why are you here\n");
+    pip = iget(mip->dev, dp->inode);//dp already points to ..	
+    int i = 0;
+    for(i = 0; i < 12; i++){//deallocate block loop
+      if(ip->i_block[i] != 0){
+	printf("gonna deallocate this bitch\n");
+	bdealloc(mip->dev, ip->i_block[i]);
+      }
+    }
+    printf("deallocate inode\n");	
+    idealloc(mip->dev, mip->ino);
+    iput(mip);
+		
+    
+    char myname[256];
+    getmyname(pip, mip->ino, &myname);
+    printf("%s\n", myname);
+    rm_child(pip, myname);
+  }
 }
 
 int rm_child(MINODE * parent, char *name){
-	INODE *ip = &(parent->INODE);
-	char buf[BLKSIZE];
-	char *cp, c;
-	DIR *dpprev;//previous dp
-	int i = 0, found = 0;
-	for(i = 0; i<12; i++){//loop to find dp containing name
-		get_block(parent->dev, ip->i_block[i], buf);
-		cp = buf;
-		dp = (DIR *)cp;
-		while(cp < buf + BLKSIZE){
-			c = dp->name[dp->name_len];
-			dp->name[dp->name_len] = 0;
-			if(strcmp(dp->name,name) == 0){
-				found = 1;
-			}
-			dp->name[dp->name_len] = c;
-			if(found){
-				break;
-			}
-			dpprev = dp;
-			cp += dp->rec_len;
-			dp = (DIR *)cp;
-		}
-	}
-	
-	if(dp->rec_len == BLKSIZE){//beginning of block
-		bdealloc(parent->dev, ip->i_block[i]);
-		while(ip->i_block[i+1] != 0){
-			ip->i_block[i] = ip->i_block[i+1];
-		}
-	}
-	else if(c + dp->rec_len == BLKSIZE){//end of block
-		dpprev->rec_len += dep->rec_len;
-		dp->ino = 0;
-		dp->name_len = 0;
-		dp->rec_len = 0;
-		dp->name = 0;
-	}
-	else {//somewhere in the middle
-		dpprev = dp;//make dpprev the inode you are removing
-		cp += dp->rec_len;
-		dp = (DIR *)cp;
-		while(cp < buf + BLKSIZE){
-			dpprev->ino = dp->ino;
-			dpprev->rec_len = dp->rec_len;
-			dpprev->name_len = dp->name_len;
-			c = dp->name[dp->name_len];
-			dp->name[dp->name_len] = 0;
-			strcpy(dpprev->name,dp->name);
-			dp->name[dp->name_len] = c;
-			dpprev = dp;
-			cp += dp->rec_len;
-			dp = (DIR *)cp;
-		}
-		
-	}
-	put_block(parent->dev,ip->i_block[i],buf);
-	parent->dirty = 1;
+  INODE *ip = &(parent->INODE);
+  char buf[BLKSIZE];
+  char *cp, c;
+  DIR *dpprev;//previous dp
+  int i = 0, found = 0, location = 0;
+  for(i = 0; i<12; i++){//loop to find dp containing name
+    get_block(parent->dev, ip->i_block[i], buf);
+    cp = buf;
+    dp = (DIR *)cp;
+    while(cp < buf + BLKSIZE){
+      c = dp->name[dp->name_len];
+      dp->name[dp->name_len] = 0;
+      if(strcmp(dp->name,name) == 0){
+	found = 1;
+      }
+      dp->name[dp->name_len] = c;
+      if(found){
+	break;
+      }
+      dpprev = dp;
+      location += dp->rec_len;
+      cp += dp->rec_len;
+      dp = (DIR *)cp;
+    }
+    if(found){
+      break;
+    }
+  }
+
+  printf("location %d, dp->rec_len %d\n", location, dp->rec_len);
+  if(dp->rec_len + 24 == BLKSIZE){//beginning of block
+    printf("1\n");
+    bdealloc(parent->dev, ip->i_block[i]);
+    while(ip->i_block[i+1] != 0){
+      ip->i_block[i] = ip->i_block[i+1];
+    }
+  }
+  else if(location + dp->rec_len == BLKSIZE){//end of block
+    printf("2\n");
+    dpprev->rec_len += dp->rec_len;
+    dp->inode = 0;
+    dp->name_len = 0;
+    dp->rec_len = 0;
+    for(int j = 0; j < dp->name_len; j++){
+      dp->name[j] = 0;
+    }
+  }
+  else {//somewhere in the middle
+    printf("3\n");
+    dpprev = dp;//make dpprev the inode you are removing
+    cp += dp->rec_len;
+    dp = (DIR *)cp;
+    while(cp < buf + BLKSIZE){//shifts the other dp's to the left so there are no gaps
+      dpprev->inode = dp->inode;
+      dpprev->rec_len = dp->rec_len;
+      dpprev->name_len = dp->name_len;
+      c = dp->name[dp->name_len];
+      dp->name[dp->name_len] = 0;
+      strcpy(dpprev->name,dp->name);
+      dp->name[dp->name_len] = c;
+      dpprev = dp;
+      cp += dp->rec_len;
+      dp = (DIR *)cp;
+    }
+    dp->inode = 0;
+    dp->name_len = 0;
+    dp->rec_len = 0;
+    for(int j = 0; j < dp->name_len; j++){
+      dp->name[j] = 0;
+    }	
+  }
+  put_block(parent->dev,ip->i_block[i],buf);
+  parent->dirty = 1;
 }

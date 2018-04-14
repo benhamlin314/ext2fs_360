@@ -1,4 +1,3 @@
-#include "type.h"
 #include "globals.h"
 
 //many functions taken from lab6 prework
@@ -134,7 +133,7 @@ int idealloc(int dev, int ino){//assumes inode is empty as in all blocks dealloc
 	// read inode_bitmap block
 	get_block(dev, imap, buf);
 	clr_bit(buf,ino);
-	incFreeInodes(dev)
+	incFreeInodes(dev);
 	
 	put_block(dev, imap, buf);
 }

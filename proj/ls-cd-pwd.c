@@ -2,24 +2,26 @@
 #include "globals.h"
 
 char buf[BLKSIZE];
-INODE *mip;
+MINODE *mip;
+INODE *ip;
 
 int ls_file(int ino){
   mip = iget(dev, ino);
-
-  printf("%07o ",mip->i_mode);
-  printf("%d ",mip->i_uid);
-  printf("%d ",mip->i_gid);
-  printf("%d ",mip->i_atime);
+  ip = &(mip->INODE);
+  printf("%07o ",ip->i_mode);
+  printf("%d ",ip->i_uid);
+  printf("%d ",ip->i_gid);
+  printf("%d ",ip->i_atime);
   
 }
 
 int ls_dir(int ino){
   mip = iget(dev, ino);
+  ip = &(mip->INODE);
 
   char lsbuf[BLKSIZE], temp[256];
   char *cp;
-  get_block(dev, mip->i_block[0], lsbuf);
+  get_block(dev, ip->i_block[0], lsbuf);
 
   cp = lsbuf;
   dp = (DIR *)lsbuf;
@@ -48,7 +50,8 @@ int parse_path(char *path, char *name[256]){
 }
 
 int list_file(char *path){
-  INODE *tip;
+  MINODE *tip;
+  INODE *ip;
   char *name[256];
   int nlen = 0;
   int cur = 0;
@@ -56,9 +59,10 @@ int list_file(char *path){
   char * temp;
   if(path[0] == '/'){
     tip = iget(dev,2);
+    ip = &(tip->INODE);
   }
   else{
-      tip=running->cwd;
+    tip=(MINODE *)running->cwd;
   }
   temp = strtok(path, "/");
   name[nlen++]= temp;
@@ -74,7 +78,7 @@ int list_file(char *path){
     //make sure path exists
     printf("Find path....\n");
     for(cur=0;cur<nlen;cur++){
-      ino = search(tip,name[cur]);
+      ino = search(ip,name[cur]);
 
 
       if(!ino){
@@ -82,7 +86,8 @@ int list_file(char *path){
 	return -1;
       }
       tip = iget(dev, ino);
-      if ((tip->i_mode & 0xF000) != 0x4000){
+      ip = &(tip->INODE);
+      if ((ip->i_mode & 0xF000) != 0x4000){
 	printf("ls failed: not a DIR\n");
 	return -1;
       }
@@ -99,7 +104,7 @@ int list_file(char *path){
 }
 
 int change_dir(char *path){
-  INODE *tip;
+  MINODE *tip;
   char *name[256];
   int nlen = 0;
   int cur = 0;
@@ -122,13 +127,13 @@ int change_dir(char *path){
   //make sure path exists
   printf("Find path....\n");
   for(cur=0;cur<nlen;cur++){
-    ino = search(tip,name[cur]);
+    ino = search(&(tip->INODE),name[cur]);
     if(!ino){
       printf("Path not found at %s\n", name[cur]);
       return -1;
     }
     tip = iget(dev, ino);
-    if ((tip->i_mode & 0xF000) != 0x4000){
+    if ((tip->INODE.i_mode & 0xF000) != 0x4000){
       printf("ls failed: not a DIR\n");
       return -1;
     }
@@ -155,8 +160,9 @@ int rpwd(INODE *ip){
 
   //Grab Parent
   mip = iget(dev,dp->inode);
+  ip = &(mip->INODE);
   //Grab Block
-  get_block(dev,mip->i_block[0], buf);
+  get_block(dev,ip->i_block[0], buf);
   //Load Buf
   cp = buf;
   dp = (DIR *)buf;
