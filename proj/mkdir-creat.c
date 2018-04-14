@@ -167,7 +167,7 @@ int creat_file(){
   //Get INODE Itself                                                                                                                                                                                        
   MINODE *pip = iget(dev,pino);
   if(pip->INODE.i_mode == 0x41ED){ //Parent Is Dir                                                                                                                                                                       
-    my_creat(pip);
+    my_creat(pip, child);
     //Update pip                                                                                                                                                                                            
     //Dont Increment Parent Count
     pip->dirty = 1; //Set To Dirty
