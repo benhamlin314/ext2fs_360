@@ -60,7 +60,7 @@ int rmdir(){
 
 int rm_child(MINODE * parent, char *name){
   INODE *ip = &(parent->INODE);
-  char buf[BLKSIZE];
+  char buf[BLKSIZE], myname[256];
   char *cp, c, *cp2;
   DIR *dpprev;//previous dp
   int i = 0, found = 0, location = 0, size = 0;
@@ -90,7 +90,8 @@ int rm_child(MINODE * parent, char *name){
     }
   }
 
-  printf("location %d, dp->rec_len %d\n", location, dp->rec_len);
+  getmyname(parent, dp->inode, myname);
+  printf("%s location %d, dp->rec_len %d\n",myname, location, dp->rec_len);
   size = dp->rec_len;
   if(dp->rec_len + 24 == BLKSIZE){//beginning of block
     printf("1\n");
