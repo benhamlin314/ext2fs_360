@@ -119,14 +119,9 @@ int rm_child(MINODE * parent, char *name){
     }
   }
 
-<<<<<<< HEAD
-  getmyname(parent, dp->inode, myname);
-  printf("%s location %d, dp->rec_len %d\n",myname, location, dp->rec_len);
-=======
   printf("%s found in block %d\n",name, i);
   getmyname(parent, dp->inode, myname);
   printf("%s location %d, dp->rec_len %d\n", myname, location, dp->rec_len);
->>>>>>> rmdir-problems
   size = dp->rec_len;
 
   if(dp->rec_len + 24 == BLKSIZE){//beginning of block
