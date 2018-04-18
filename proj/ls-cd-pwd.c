@@ -12,7 +12,7 @@ int ls_file(int ino){
   printf("%d ",ip->i_uid);
   printf("%d ",ip->i_gid);
   printf("%d ",ip->i_atime);
-  
+
 }
 
 int ls_dir(int ino){
@@ -34,6 +34,7 @@ int ls_dir(int ino){
 
     cp += dp->rec_len;
     dp = (DIR *)cp;
+
   }
 }
 
@@ -42,7 +43,7 @@ int parse_path(char *path, char *name[256]){
   char * temp;
   temp = strtok(path, "/");
   name[nlen++]= temp;
-  
+
   while(temp = strtok(0,"/")){//parses path into name array
     name[nlen++] = temp;
   }
@@ -50,7 +51,7 @@ int parse_path(char *path, char *name[256]){
 }
 
 int list_file(char *path){
-  MINODE *tip;
+  /*MINODE *tip;
   INODE *ip;
   char *name[256];
   int nlen = 0;
@@ -66,11 +67,11 @@ int list_file(char *path){
   }
   temp = strtok(path, "/");
   name[nlen++]= temp;
-  
+
   while(temp = strtok(0,"/")){//parses path into name array
     name[nlen++] = temp;
   }
-  
+
   if(name[cur] == 0){
     ls_dir(2);
   }
@@ -94,12 +95,19 @@ int list_file(char *path){
       printf("Found ino: %d\n", ino);
     }
     printf("OK\n");
-
-
+*/
+    int ino = 0;
+    if(strlen(path)==0){
+      path = "/";
+    }
+    ino = getino(dev, path);
+    if( ino == 0){
+      return 0;
+    }
 
     ls_dir(ino);
-  }
-  
+
+
   return 0;
 }
 
@@ -117,13 +125,13 @@ int change_dir(char *path){
   }
   temp = strtok(path, "/");
   name[nlen++]= temp;
-  
+
   while(temp = strtok(0,"/")){//parses path into name array
     name[nlen++] = temp;
   }
   int ino = 0;
 
-  
+
   //make sure path exists
   printf("Find path....\n");
   for(cur=0;cur<nlen;cur++){
@@ -150,7 +158,7 @@ int rpwd(INODE *ip){
   //Load Buf
   char *cp = buf;
   dp = (DIR *)buf;
-  
+
   char charArray[256];
 
   //Begin Move Process
@@ -179,7 +187,7 @@ int rpwd(INODE *ip){
   //Load Name Into charArray[] And Add NULL Char
   strcpy(charArray,dp3->name);
   charArray[dp3->name_len] = 0;
-  
+
   //Begin Loop Process
   if(dp->inode == dp2->inode){ //Check . Against ..
     printf("/");

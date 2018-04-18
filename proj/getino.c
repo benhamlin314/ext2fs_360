@@ -4,12 +4,12 @@ int get_block(int dev, int blk, char *buf)
 {
    lseek(dev, (long)blk*BLKSIZE, 0);
    read(dev, buf, BLKSIZE);
-}   
+}
 int put_block(int dev, int blk, char *buf)
 {
    lseek(dev, (long)blk*BLKSIZE, 0);
    write(dev, buf, BLKSIZE);
-}   
+}
 ****************/
 
 #include <stdio.h>
@@ -31,10 +31,10 @@ extern int bmap, imap, iblk;
 
 extern char gpath[128];   // hold tokenized strings
 extern char *name[64];    // token string pointers
-extern int  n;            // number of token strings 
+extern int  n;            // number of token strings
 
 /*
-char kcwnames[64][128],*kcwname[64]; 
+char kcwnames[64][128],*kcwname[64];
 int  kcwn;
 */
 
@@ -46,7 +46,7 @@ MINODE *kcwiget(int dev, int ino)
   char buf[BLKSIZE];
   int blk, disp;
   INODE *ip;
-  
+
   for (i=0; i<NMINODE; i++){
     mip = &minode[i];
     if (mip->dev == dev && mip->ino == ino){
@@ -55,7 +55,7 @@ MINODE *kcwiget(int dev, int ino)
        return mip;
     }
   }
-    
+
   for (i=0; i<NMINODE; i++){
     mip = &minode[i];
     if (mip->refCount == 0){
@@ -64,7 +64,7 @@ MINODE *kcwiget(int dev, int ino)
        mip->dev = dev;
        mip->ino = ino;
 
-       // get INODE of ino to buf    
+       // get INODE of ino to buf
        blk  = (ino-1)/8 + iblk;
        disp = (ino-1) % 8;
 
@@ -76,7 +76,7 @@ MINODE *kcwiget(int dev, int ino)
        mip->INODE = *ip;
        return mip;
     }
-  }   
+  }
   printf("PANIC: no more free minodes\n");
   return 0;
 }
@@ -87,16 +87,16 @@ kcwiput(MINODE *mip)
  char buf[BLKSIZE];
  INODE *ip;
 
- if (mip==0) 
+ if (mip==0)
      return;
 
  mip->refCount--;
- 
+
  if (mip->refCount > 0) return;
  if (!mip->dirty)       return;
- 
+
  /* write back */
- printf("KCWiput: dev=%d ino=%d\n", mip->dev, mip->ino); 
+ printf("KCWiput: dev=%d ino=%d\n", mip->dev, mip->ino);
 
  block =  ((mip->ino - 1) / 8) + iblk;
  offset =  (mip->ino - 1) % 8;
@@ -109,7 +109,7 @@ kcwiput(MINODE *mip)
 
  put_block(mip->dev, block, buf);
 
-} 
+}
 
 int tokenize(char *pathname)
 {
@@ -134,12 +134,12 @@ int tokenize(char *pathname)
 
 int kcwsearch(MINODE *mip, char *name)
 {
-   int i; 
+   int i;
    char *cp, c, sbuf[BLKSIZE];
    DIR *dp;
    INODE *ip;
 
-   printf("KCWsearch:search for %s in MINODE = [%d, %d]\n", 
+   printf("KCWsearch:search for %s in MINODE = [%d, %d]\n",
            name,mip->dev,mip->ino);
    ip = &(mip->INODE);
 
@@ -159,8 +159,8 @@ int kcwsearch(MINODE *mip, char *name)
         while (cp < sbuf + BLKSIZE){
 	    c = dp->name[dp->name_len];
             dp->name[dp->name_len] = 0;
-           
-            printf("%8d%8d%8u        %s\n", 
+
+            printf("%8d%8d%8u        %s\n",
                     dp->inode, dp->rec_len, dp->name_len, dp->name);
             if (strcmp(dp->name, name)==0){
                 printf("found %s : ino = %d\n", name, dp->inode);
@@ -196,7 +196,7 @@ int kcwgetino(int dev, char *pathname)
   for (i=0; i<n; i++){
       printf("===========================================\n");
       printf("KCWgetino: i=%d name[%d]=%s\n", i, i, name[i]);
- 
+
       ino = kcwsearch(mip, name[i]);
 
       if (ino==0){
