@@ -52,6 +52,9 @@ int getino(int dev, char *pathname)
 #include "mkdir-creat.c"
 #include "alloc-dealloc.c"
 #include "rmdir.c"
+#include "stat.c"
+#include "chmod.c"
+#include "link-unlink.c"
 
 int init()
 {
@@ -76,9 +79,6 @@ int init()
     for (j=0; j<NFD; j++)
       p->fd[j] = 0;
   }
-
-  //for (i=0; i <
-
 }
 
 // load root INODE and set root pointer to it
@@ -148,7 +148,8 @@ main(int argc, char *argv[ ])
 
   //printf("hit a key to continue : "); getchar();
   while(1){
-    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|quit] ");
+    printf("Commands: [ls|cd|pwd|mkdir|creat|rmdir|stat|chmod|link|quit]\n");
+    printf("Input: ");
     fgets(line, 128, stdin);
 
     line[strlen(line)-1] = 0;
@@ -156,9 +157,26 @@ main(int argc, char *argv[ ])
     if (line[0]==0)
       continue;
     pathname[0] = 0;
-
-    sscanf(line, "%s %s", cmd, pathname);
+    char permissions[64];
+    char tempPathName[64];
+    sscanf(line, "%s %s %s", cmd, pathname,tempPathName);
     printf("cmd=%s pathname=%s\n", cmd, pathname);
+
+    
+    if(strcmp(cmd,"chmod")==0){
+      strcpy(permissions,pathname);
+      strcpy(pathname,tempPathName);
+      for(int k = 0; k < 64; k++){
+	tempPathName[k] = 0;
+	}
+    }
+    char oldfile[64];
+    char newfile[64];
+    if(strcmp(cmd,"link")==0){
+      strcpy(oldfile,pathname);
+      strcpy(newfile,tempPathName);
+      my_link(oldfile, newfile);
+    }
 
     if (strcmp(cmd, "ls")==0){
         list_file(pathname);
@@ -179,6 +197,16 @@ main(int argc, char *argv[ ])
     }
     if(strcmp(cmd, "rmdir")==0){
       rmdir();
+    }
+    if(strcmp(cmd, "stat")==0){
+      get_block(dev,running->cwd->INODE.i_block[0], buf);
+      char *cp = buf;
+      dp = (DIR *)buf;
+      my_stat(dp->inode);
+    }
+    if(strcmp(cmd, "chmod")==0){
+      int inumber = getino(dev,pathname);
+      my_chmod(inumber,permissions);
     }
   }
 }
