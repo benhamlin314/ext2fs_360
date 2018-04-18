@@ -8,6 +8,16 @@ INODE *ip;
 int ls_file(int ino){
   mip = iget(dev, ino);
   ip = &(mip->INODE);
+  char *Permission = "rwxrwxrwx";
+  printf("Permissions: ");
+  for(int i = 0; i < 9; i++){
+    if(ip->i_mode & (1 << (strlen(Permission)-1-i))){
+      putchar(Permission[i]);
+    }
+    else{
+      putchar('-');
+    }
+  }
   printf("%07o ",ip->i_mode);
   printf("%d ",ip->i_uid);
   printf("%d ",ip->i_gid);
@@ -183,6 +193,7 @@ int rpwd(INODE *ip){
   //Begin Loop Process
   if(dp->inode == dp2->inode){ //Check . Against ..
     printf("/");
+    printf("%s/",charArray);
     return 0;
   }
   else{
