@@ -9,6 +9,10 @@ int rmdir(){
   int empty=1;
 
   int ino = getino(dev, pathname);//currently assumes dev
+  if(ino == 0){
+    printf("Path not found can't remove\n");
+    return -1;
+  }
   mip = iget(dev, ino);
 
   char myname[256];
@@ -44,8 +48,8 @@ int rmdir(){
     int i = 0;
     for(i = 0; i < 12; i++){//deallocate block loop
       if(ip->i_block[i] != 0){
-	printf("Deallocating block %d\n", i);
-	bdealloc(mip->dev, ip->i_block[i]);
+      	printf("Deallocating block %d\n", i);
+      	bdealloc(mip->dev, ip->i_block[i]);
       }
     }
     printf("Deallocate inode\n");
@@ -87,44 +91,47 @@ int rm_child(MINODE * parent, char *name){
   INODE *ip = &(parent->INODE);
   char buf[BLKSIZE], myname[256];
   char *cp, c, *cp2;
-  DIR *dpprev;//previous dp
+  DIR *dpnext, *dpprev;//next dp
   int i = 0, found = 0, location = 0, size = 0;
   for(i = 0; i<12; i++){//loop to find dp containing name
     get_block(parent->dev, ip->i_block[i], buf);
     cp = cp2 = buf;
-    dpprev = (DIR *)cp;
+    dp = (DIR *)cp;
     cp2 += dp->rec_len;
-    dp = (DIR *)cp2;
+    dpnext = (DIR *)cp2;
 
     while(cp < buf + BLKSIZE){
-      printf("%d\n", dpprev->inode);//inode of current thing
-      c = dpprev->name[dpprev->name_len];
-      dpprev->name[dpprev->name_len] = 0;
-      printf("%s , %d compare to %s\n",dpprev->name, dpprev->inode, name);
-      if(strcmp(dpprev->name,name) == 0){
+      printf("%d\n", dp->inode);//inode of current thing
+      c = dp->name[dp->name_len];
+      dp->name[dp->name_len] = 0;
+      printf("%s , %d compare to %s\n",dp->name, dp->inode, name);
+      if(strcmp(dp->name,name) == 0){
+        printf("FOUND IT\n");
 	       found = 1;
       }
-      dpprev->name[dpprev->name_len] = c;
-      printf("%d\n", dpprev->inode);
+      dp->name[dp->name_len] = c;
+      printf("%d\n", dp->inode);
       if(found){
 	       break;
       }
-      cp += dpprev->rec_len;
       dpprev = dp;
-      cp2 += dp->rec_len;
-      dp = (DIR *)cp2;
+      cp += dp->rec_len;
+      location += dp->rec_len;
+      dp = dpnext;
+      cp2 += dpnext->rec_len;
+
+      dpnext = (DIR *)cp2;
     }
     if(found){
       break;
     }
   }
-
   printf("%s found in block %d\n",name, i);
   getmyname(parent, dp->inode, myname);
   printf("%s location %d, dp->rec_len %d\n", myname, location, dp->rec_len);
   size = dp->rec_len;
 
-  if(dp->rec_len + 24 == BLKSIZE){//beginning of block
+  if(dp->rec_len == BLKSIZE){//beginning of block
     printf("1\n");
     bdealloc(parent->dev, ip->i_block[i]);
     while(ip->i_block[i+1] != 0){
@@ -145,29 +152,30 @@ int rm_child(MINODE * parent, char *name){
   else {//somewhere in the middle
     printf("%d size of removed record\n", size);
     printf("3\n");
-    cp += dpprev->rec_len;
-    dpprev = dp;//make dpprev the inode you are removing
-    cp2 += dp->rec_len;
-    dp = (DIR *)cp2;
-    while(size+cp2 + dpprev->rec_len < buf + BLKSIZE){//shifts the other dp's to the left so there are no gaps
-      cp += dpprev->rec_len;
-      c = dp->name[dp->name_len];
-      dp->name[dp->name_len] = 0;
-      printf("Shifting %s to replace  %d \n", dp->name, dpprev->inode);
-      dp->name[dp->name_len] = c;
-      dpprev->inode = dp->inode;
-      dpprev->rec_len = dp->rec_len;
-      dpprev->name_len = dp->name_len;
-      strncpy(dpprev->name, dp->name, dp->name_len);
+    while(size + cp2 + dp->rec_len < buf + BLKSIZE){//shifts the other dp's to the left so there are no gaps
+      cp += dpnext->rec_len;
+      c = dpnext->name[dpnext->name_len];
+      dpnext->name[dpnext->name_len] = 0;
+      printf("Shifting %s to replace  %d \n", dpnext->name, dp->inode);
+      dpnext->name[dpnext->name_len] = c;
+      dp->inode = dpnext->inode;
+      dp->rec_len = dpnext->rec_len;
+      dp->name_len = dpnext->name_len;
+      strncpy(dp->name, dpnext->name, dpnext->name_len);
 
-      location += dp->rec_len;
-      cp2 += dp->rec_len;
       dpprev = dp;
-      dp = (DIR *)cp2;
+      cp2 += dpnext->rec_len;
+      dp = dpnext;
+      dpnext = (DIR *)cp2;
     }
-    //shifts the last dir struct over
+
     dpprev->rec_len += size;
-    printf("Last record length %d\n", dp->rec_len);
+    /*dpnext->inode = 0;
+    dpnext->name_len = 0;
+    dpnext->rec_len = 0;
+    for(int j = 0; j < dpnext->name_len; j++){
+      dpnext->name[j] = 0;
+    }*/
   }
   put_block(parent->dev,ip->i_block[i],buf);
   parent->dirty = 1;

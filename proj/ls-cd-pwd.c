@@ -98,11 +98,13 @@ int list_file(char *path){
 */
     int ino = 0;
     if(strlen(path)==0){
-      path = "/";
+      ls_dir(running->cwd->ino);
     }
-    ino = getino(dev, path);
-    if( ino == 0){
-      return 0;
+    else{
+      ino = getino(dev, path);
+      if( ino == 0){
+        return 0;
+      }
     }
 
     ls_dir(ino);
