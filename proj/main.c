@@ -4,7 +4,7 @@
 #include <string.h>
 #include <libgen.h>
 #include <sys/stat.h>
-#include <ext2fs/ext2_fs.h> 
+#include <ext2fs/ext2_fs.h>
 
 #include "type.h"
 #include "globals.h"
@@ -28,7 +28,7 @@ char line[128], cmd[32], pathname[64];
 
 char gpath[128];   // hold tokenized strings
 char *name[64];    // token string pointers
-int  n;            // number of token strings 
+int  n;            // number of token strings
 
 MINODE * iget(int dev, int ino)
 {
@@ -79,12 +79,11 @@ int init()
     for (j=0; j<NFD; j++)
       p->fd[j] = 0;
   }
-  
 }
 
 // load root INODE and set root pointer to it
 int mount_root()
-{  
+{
   printf("mount_root()\n");
   root = iget(dev, 2);
   root->mounted = 1;
@@ -125,12 +124,12 @@ main(int argc, char *argv[ ])
   if (sp->s_magic != 0xEF53){
       printf("magic = %x is not an ext2 filesystem\n", sp->s_magic);
       exit(1);
-  }     
+  }
   printf("OK\n");
   ninodes = sp->s_inodes_count;
   nblocks = sp->s_blocks_count;
-  
-  get_block(dev, 2, buf); 
+
+  get_block(dev, 2, buf);
   gp = (GD *)buf;
 
   bmap = gp->bg_block_bitmap;
@@ -138,7 +137,7 @@ main(int argc, char *argv[ ])
   iblk = gp->bg_inode_table;
   printf("bmp=%d imap=%d iblk = %d\n", bmap, imap, iblk);
 
-  init();  
+  init();
   mount_root();
   printf("root refCount = %d\n", root->refCount);
 
@@ -180,16 +179,7 @@ main(int argc, char *argv[ ])
     }
 
     if (strcmp(cmd, "ls")==0){
-      if(strlen(pathname) == 0){
-	get_block(dev,running->cwd->INODE.i_block[0], buf);
-
-	char *cp = buf;
-	dp = (DIR *)buf;
-	ls_dir(dp->inode);
-      }
-      else{
-       list_file(pathname);
-      }
+        list_file(pathname);
     }
     if (strcmp(cmd, "cd")==0)
        change_dir(pathname);
@@ -220,7 +210,7 @@ main(int argc, char *argv[ ])
     }
   }
 }
- 
+
 int quit()
 {
   int i;
