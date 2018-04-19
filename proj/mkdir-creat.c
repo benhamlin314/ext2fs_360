@@ -6,10 +6,10 @@ int make_dir(){
   char *child;
 
   //System Calls To Tokenize Pathname
-  char temp[64];
-  strcpy(temp,pathname);
+  char temp_pathname[64];
+  strcpy(temp_pathname,pathname);
   parent = dirname(pathname);
-  child = basename(temp);
+  child = basename(temp_pathname);
 
   //Get INODE Number
   int pino = getino(dev,parent);
@@ -17,7 +17,27 @@ int make_dir(){
   MINODE *pip = iget(dev,pino);
 
   if(pip->INODE.i_mode == 0x41ED){ //Is Dir
-  //*********** add check to see if child already exists
+    //*********** add check to see if child already exists
+    char mkdir_buf[BLKSIZE], temp[256];
+    char *cp;
+    DIR *dp;
+    get_block(dev,pip->INODE.i_block[0],mkdir_buf);
+
+    cp = mkdir_buf;
+    dp = (DIR *)mkdir_buf;
+
+    while(cp < mkdir_buf+1024){
+      strncpy(temp,dp->name,dp->name_len);
+      temp[dp->name_len]=0;
+      if(strcmp(temp,child)==0){
+	printf("Name Already Exists\n");
+	return -1;
+      }
+      cp += dp->rec_len;
+      dp = (DIR *)cp;
+    }
+      
+    //*********** end add check
     mymkdir(pip, child);
     //Update pip
     pip->INODE.i_links_count++;
@@ -161,14 +181,37 @@ int creat_file(){
   char *child;
 
   //System Calls To Tokenize Pathname
+  char temp_pathname[64];
+  strcpy(temp_pathname,pathname);
   parent = dirname(pathname);
-  child = basename(pathname);
+  child = basename(temp_pathname);
 
   //Get INODE Number
   int pino = getino(dev,parent);
   //Get INODE Itself
   MINODE *pip = iget(dev,pino);
   if(pip->INODE.i_mode == 0x41ED){ //Parent Is Dir
+    //*********** add check to see if child already exists
+    char creat_buf[BLKSIZE], temp[256];
+    char *cp;
+    DIR *dp;
+    get_block(dev,pip->INODE.i_block[0],creat_buf);
+
+    cp = creat_buf;
+    dp = (DIR *)creat_buf;
+
+    while(cp < creat_buf+1024){
+      strncpy(temp,dp->name,dp->name_len);
+      temp[dp->name_len]=0;
+      if(strcmp(temp,child)==0){
+	printf("Name Already Exists\n");
+	return -1;
+      }
+      cp += dp->rec_len;
+      dp = (DIR *)cp;
+    }
+      
+    //*********** end add check
     my_creat(pip, child);
     //Update pip
     //Dont Increment Parent Count

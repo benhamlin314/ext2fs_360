@@ -8,12 +8,14 @@ INODE *ip;
 int stat_file(int ino,char temp[]){
   mip = iget(dev, ino);
   ip = &(mip->INODE);
-  char *Permission = "rwxrwxrwx";
+
+  //Set Up For Printing permissions
+  char *permission = "rwxrwxrwx";
   printf("Name:        %s\n",temp);
   printf("Permissions: ");
-  for(int i = 0; i < 9; i++){
-    if(ip->i_mode & (1 << (strlen(Permission)-1-i))){
-      putchar(Permission[i]);
+  for(int i = 0; i < 9; i++){ //{arse Through permissions
+    if(ip->i_mode & (1 << (strlen(permission)-1-i))){
+      putchar(permission[i]);
     }
     else{
       putchar('-');
@@ -31,24 +33,26 @@ int stat_file(int ino,char temp[]){
 }
 
 int my_stat(int ino){
-  printf("INO: %d\n",ino);
+  //Get MIP Based Off Of Passed ino (No Need For Parent, Doesn't Take Path)
   mip = iget(dev, ino);
   ip = &(mip->INODE);
 
-  char stbuf[BLKSIZE], sttemp[256];
+  //Load In INODEs Data Block[0] Into stat_buf
+  char stat_buf[BLKSIZE], stat_temp[256];
   char *cp;
-  get_block(dev, ip->i_block[0], stbuf);
+  get_block(dev, ip->i_block[0], stat_buf);
 
-  cp = stbuf;
-  dp = (DIR *)stbuf;
+  //Set Up cp and dp
+  cp = stat_buf;
+  dp = (DIR *)stat_buf;
 
-  while(cp < stbuf+1024){
-    strncpy(sttemp, dp->name, dp->name_len);
-    sttemp[dp->name_len] = 0;
-    if(strcmp(sttemp,pathname)==0){
-      stat_file(dp->inode,sttemp);
+  while(cp < stat_buf+1024){//Parse Through stat_buf For pathname(name)
+    strncpy(stat_temp, dp->name, dp->name_len);
+    stat_temp[dp->name_len] = 0;
+    if(strcmp(stat_temp,pathname)==0){ //If Hit
+      stat_file(dp->inode,stat_temp); //Used For Printing (Pass ino,name)
     }
-    printf("PathName: %s, Temp: %s\n",pathname,sttemp);
+    //Increment
     cp += dp->rec_len;
     dp = (DIR *)cp;
   }
