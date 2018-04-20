@@ -45,6 +45,7 @@ int rmdir(){
     }
     pip = iget(mip->dev, dp->inode);//dp already points to ..
     getmyname(pip, mip->ino, myname);
+    //replace with truncate
     int i = 0;
     for(i = 0; i < 12; i++){//deallocate block loop
       if(ip->i_block[i] != 0){
@@ -56,27 +57,6 @@ int rmdir(){
     idealloc(mip->dev, mip->ino);
     mip->dirty = 1;
     iput(mip);
-
-    //Removing from minode array
-    /*int l;
-    MINODE *tmip;
-    for (l=0; l<NMINODE; l++){
-      tmip = &minode[l];
-      if(tmip->ino == ino){
-        while(tmip->ino != ino){
-          minode[l] = minode[l+1];
-          l++;
-        }
-        tmip = &minode[l];
-        tmip->dev = tmip->ino = 0;
-        tmip->refCount = 0;
-        tmip->mounted = 0;
-        tmip->mptr = 0;
-        //tmip->INODE = NULL;
-        break;
-      }
-    }*/
-
 
     printf("Removing %s from parent's list\n", myname);
     rm_child(pip, myname);
@@ -101,10 +81,10 @@ int rm_child(MINODE * parent, char *name){
     dpnext = (DIR *)cp2;
 
     while(cp < buf + BLKSIZE){
-      printf("%d\n", dp->inode);//inode of current thing
+      //printf("%d\n", dp->inode);//inode of current thing
       c = dp->name[dp->name_len];
       dp->name[dp->name_len] = 0;
-      printf("%s , %d compare to %s\n",dp->name, dp->inode, name);
+      //printf("%s , %d compare to %s\n",dp->name, dp->inode, name);
       if(strcmp(dp->name,name) == 0){
         printf("FOUND IT\n");
 	       found = 1;
@@ -126,15 +106,15 @@ int rm_child(MINODE * parent, char *name){
       break;
     }
   }
-  printf("%s found in block %d\n",name, i);
+  //printf("%s found in block %d\n",name, i);
   getmyname(parent, dp->inode, myname);
-  printf("%s location %d, dp->rec_len %d\n", myname, location, dp->rec_len);
+  //printf("%s location %d, dp->rec_len %d\n", myname, location, dp->rec_len);
   size = dp->rec_len;
 
   if(dp->rec_len == BLKSIZE){//beginning of block
     printf("1\n");
     bdealloc(parent->dev, ip->i_block[i]);
-    while(ip->i_block[i+1] != 0){
+    while(ip->i_block[i+1] != 0){//shifts existing blocks over
       ip->i_block[i] = ip->i_block[i+1];
     }
     ip->i_block[i] = ip->i_block[i+1];
@@ -150,8 +130,8 @@ int rm_child(MINODE * parent, char *name){
     }
   }
   else {//somewhere in the middle
-    printf("%d size of removed record\n", size);
-    printf("3\n");
+    //printf("%d size of removed record\n", size);
+    //printf("3\n");
     while(size + cp2 + dp->rec_len < buf + BLKSIZE){//shifts the other dp's to the left so there are no gaps
       cp += dpnext->rec_len;
       c = dpnext->name[dpnext->name_len];
@@ -170,12 +150,6 @@ int rm_child(MINODE * parent, char *name){
     }
 
     dpprev->rec_len += size;
-    /*dpnext->inode = 0;
-    dpnext->name_len = 0;
-    dpnext->rec_len = 0;
-    for(int j = 0; j < dpnext->name_len; j++){
-      dpnext->name[j] = 0;
-    }*/
   }
   put_block(parent->dev,ip->i_block[i],buf);
   parent->dirty = 1;

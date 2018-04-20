@@ -163,7 +163,7 @@ main(int argc, char *argv[ ])
     sscanf(line, "%s %s %s", cmd, pathname,tempPathName);
     printf("cmd=%s pathname=%s\n", cmd, pathname);
 
-    
+
     if(strcmp(cmd,"chmod")==0){
       strcpy(permissions,pathname);
       strcpy(pathname,tempPathName);
@@ -215,6 +215,15 @@ main(int argc, char *argv[ ])
     }
     if(strcmp(cmd, "touch")==0){
       my_touch();
+    }
+    if(strcmp(cmd, "symlink")==0){
+      char *oldname, *newname;
+      oldname = strtok(pathname, " ");
+      newname = strtok(0," ");
+      my_symlink(oldname,newname);
+    }
+    if(strcmp(cmd, "readlink")==0){
+      my_readlink();
     }
   }
 }

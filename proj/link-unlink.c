@@ -22,7 +22,7 @@ my_link_creat(MINODE *pip, char *name, int ino){
   enter_name(pip,ino,name);
   mip->dirty = 1;
   iput(mip);
-  
+
 }
 
 int my_link(char oldfile[], char newfile[]){
@@ -42,11 +42,13 @@ int my_link(char oldfile[], char newfile[]){
     child = basename(temp);
     printf("Parent: %s Child: %s\n\n\n",parent,child);
 
+
     //Grab The Parent MINODE (The Parents dirname)
     int parent_ino = getino(dev,parent);
     MINODE *parent_ip = iget(dev,parent_ino);
     printf("Parent ino: %d\n",parent_ino);
   
+
     //Add Entry To New Dir
     if(parent_ip->INODE.i_mode == 0x41ED){ //Parent Is A Directory
       //Call my_link_creat to create the new file with the old inumber
