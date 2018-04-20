@@ -118,8 +118,6 @@ int list_file(char *path){
     }
 
     ls_dir(ino);
-	}
-
 
   return 0;
 }

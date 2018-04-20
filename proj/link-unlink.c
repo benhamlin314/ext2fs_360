@@ -19,7 +19,7 @@ my_link_creat(MINODE *pip, char *name, int ino){
   enter_name(pip,ino,name);
   mip->dirty = 1;
   iput(mip);
-  
+
 }
 
 int my_link(char oldfile[], char newfile[]){
@@ -29,14 +29,14 @@ int my_link(char oldfile[], char newfile[]){
 
   //Check OldFile Path NEED TO DO THIS
 
-  
+
   //Get INODE For OldFile
   int old_pino = getino(dev,oldfile);
   MINODE *old_pip = iget(dev,old_pino);
 
   //Validate Type
   if(old_pip->INODE.i_mode == 0x81A4){
-  
+
     //Check NewFile Path (Minus Last Entry)
     char * Parent;
     char * Child;
@@ -48,7 +48,7 @@ int my_link(char oldfile[], char newfile[]){
 
     int pino = getino(dev,Parent);
     MINODE *pip = iget(dev,pino);
-  
+
     //Add Entry To New Dir
     if(pip->INODE.i_mode == 0x41ED){ //Parent Is A Directory
       //Make NewFile->ino The Same As OldFile->ino (Done In Function)
