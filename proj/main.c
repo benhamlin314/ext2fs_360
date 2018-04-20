@@ -56,6 +56,8 @@ int getino(int dev, char *pathname)
 #include "chmod.c"
 #include "link-unlink.c"
 #include "symlink.c"
+#include "touch.c"
+
 
 int init()
 {
@@ -149,7 +151,7 @@ main(int argc, char *argv[ ])
 
   //printf("hit a key to continue : "); getchar();
   while(1){
-    printf("Commands: [ls|cd|pwd|mkdir|creat|rmdir|stat|chmod|link|quit]\n");
+    printf("Commands: [ls|cd|pwd|mkdir|creat|rmdir|stat|chmod|link|unlink|touch|quit]\n");
     printf("Input: ");
     fgets(line, 128, stdin);
 
@@ -174,19 +176,23 @@ main(int argc, char *argv[ ])
     char oldfile[64];
     char newfile[64];
     if(strcmp(cmd,"link")==0){
+      //Do This In Order To Reorder Arguments
       strcpy(oldfile,pathname);
       strcpy(newfile,tempPathName);
       my_link(oldfile, newfile);
     }
-
+    if(strcmp(cmd,"unlink")==0){
+      strcpy(oldfile,pathname); //Do This To Avoid Destorying The Global
+      my_unlink(oldfile);
+    }
     if (strcmp(cmd, "ls")==0){
-        list_file(pathname);
+      list_file(pathname);
     }
     if (strcmp(cmd, "cd")==0)
-       change_dir(pathname);
+      change_dir(pathname);
     if (strcmp(cmd, "pwd")==0){
-       pwd(running->cwd);
-       printf("\n");
+      pwd(running->cwd);
+      printf("\n");
     }
     if (strcmp(cmd, "quit")==0)
        quit();
@@ -206,8 +212,11 @@ main(int argc, char *argv[ ])
       my_stat(dp->inode);
     }
     if(strcmp(cmd, "chmod")==0){
-      int inumber = getino(dev,pathname);
-      my_chmod(inumber,permissions);
+      //Note: Need to do parent and child
+      my_chmod(permissions);
+    }
+    if(strcmp(cmd, "touch")==0){
+      my_touch();
     }
     if(strcmp(cmd, "symlink")==0){
       char *oldname, *newname;

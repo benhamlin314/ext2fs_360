@@ -1,0 +1,14 @@
+#include "globals.h"
+
+int my_touch(){
+
+  int ino = getino(dev,pathname);
+  printf("INO: %d\n\n\n\\n\n\n\n\n\n\n\n\n\n",ino);
+  MINODE *mip = iget(dev,ino);
+  INODE *ip = &(mip->INODE);
+
+  ip->i_atime = ip->i_mtime = time(0L);
+  
+
+
+}

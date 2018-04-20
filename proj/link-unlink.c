@@ -2,6 +2,9 @@
 
 //This File Will House Link and Unlink Functions
 
+
+
+
 my_link_creat(MINODE *pip, char *name, int ino){
 
   //Do Not Allocate A New ino Number
@@ -23,51 +26,97 @@ my_link_creat(MINODE *pip, char *name, int ino){
 }
 
 int my_link(char oldfile[], char newfile[]){
-  //link oldFile newFile
-  printf("Old: %s\nNew: %s\n",oldfile,newfile);
+  //Input Structure: link oldFile newFile
+
+  //Get INODE For oldfile
+  int old_ino = getino(dev,oldfile);
+  MINODE *old_ip = iget(dev,old_ino);
+
+  if(old_ip->INODE.i_mode == 0x81A4){//Validate The oldfile INODE Is A File
+    //Check NewFile Path (Minus BaseName)
+    char * parent;
+    char * child;
+    char temp[64]; //Temp For Tokenizing
+    strcpy(temp,newfile);
+    parent = dirname(newfile);
+    child = basename(temp);
+    printf("Parent: %s Child: %s\n\n\n",parent,child);
 
 
-  //Check OldFile Path NEED TO DO THIS
-
-
-  //Get INODE For OldFile
-  int old_pino = getino(dev,oldfile);
-  MINODE *old_pip = iget(dev,old_pino);
-
-  //Validate Type
-  if(old_pip->INODE.i_mode == 0x81A4){
-
-    //Check NewFile Path (Minus Last Entry)
-    char * Parent;
-    char * Child;
-    char tokenstring[64];
-    strcpy(tokenstring,newfile);
-    Parent = dirname(newfile);
-    Child = basename(tokenstring);
-    printf("Parent: %s Child: %s\n\n\n",Parent,Child);
-
-    int pino = getino(dev,Parent);
-    MINODE *pip = iget(dev,pino);
+    //Grab The Parent MINODE (The Parents dirname)
+    int parent_ino = getino(dev,parent);
+    MINODE *parent_ip = iget(dev,parent_ino);
+    printf("Parent ino: %d\n",parent_ino);
+  
 
     //Add Entry To New Dir
-    if(pip->INODE.i_mode == 0x41ED){ //Parent Is A Directory
-      //Make NewFile->ino The Same As OldFile->ino (Done In Function)
-      my_link_creat(pip,Child,old_pino);
-      pip->dirty = 1;
-      pip->INODE.i_atime = time(0L);
-      iput(pip);
+    if(parent_ip->INODE.i_mode == 0x41ED){ //Parent Is A Directory
+      //Call my_link_creat to create the new file with the old inumber
+      my_link_creat(parent_ip,child,old_ino); //parent,child(name),old_ino
+      parent_ip->dirty = 1;
+      parent_ip->INODE.i_atime = time(0L);
     }
     else{ //Parent Isn't A Dir
       printf("Parent Isn't A Directory\n");
       return -1;
     }
-    old_pip->dirty = 1;
-    old_pip->INODE.i_links_count++;
+    //Mark As Dirty And Increase The Links For The Old File
+    old_ip->dirty = 1;
+    old_ip->INODE.i_links_count++;
+    iput(parent_ip);
   }
-  else{
-    printf("Old File Not Directory\n");
+  else{ //The oldFile Is Not A File
+    printf("Input One Is Not A File\n");
   }
 
   //Write It Back To Disk
-  iput(old_pip);
+  iput(old_ip);
+}
+
+
+
+int my_unlink(char oldfile[]){
+
+  //Get INODE For OldFile
+  int old_ino = getino(dev,oldfile);
+  MINODE *old_ip = iget(dev,old_ino);
+
+  //Create Temp Char* For Parent And Child
+  char temp[64];
+  strcpy(temp,oldfile);
+  char *parent = dirname(temp);
+  char *child = basename(oldfile);
+
+  //Validate Type
+  if(old_ip->INODE.i_mode == 0x81A4){ //Check If oldfile Is File
+    //Remove Links Count, Make It Dirty
+    old_ip->INODE.i_links_count--;
+    old_ip->dirty = 1;
+    
+    if(old_ip->INODE.i_links_count == 0){ //Must Remove Because Links = 0
+      //Deallocate All Blocks
+      int i = 0;
+      for(i = 0; i < 12; i++){
+	if(old_ip->INODE.i_block[i] != 0){ //Check If Empty
+	  printf("Deallocating Block: [%d]\n"); //Debug Print
+	  bdealloc(dev, old_ip->INODE.i_block[i]); //Actual BDealloc
+	}
+      }
+      //Deallocate Inode Itself
+      idealloc(dev, old_ip->ino);
+      
+      //Remove The Name From Parent
+      int parent_ino = getino(dev,parent);
+      MINODE *parent_ip = iget(dev,parent_ino);
+      rm_child(parent_ip,child);
+      iput(parent_ip);
+    }
+  }
+  else{ //File Isnt File
+    printf("Pathname Doesnt Lead To File\n");
+    return -1;
+  }
+
+  //Write It Back To Disk
+  iput(old_ip);
 }
