@@ -4,10 +4,10 @@ int my_symlink(char *oldname, char *newname){
   int inumber = getino(dev, oldname);
   if(inumber){//if inumber not 0 then oldname exists
     strcpy(pathname,newname);
-    creat();
+    creat_file();
     int ino2 = getino(dev, newname);
     MINODE *mip = iget(dev, ino2);
-    mip->INODE.i_mode = EXT2_S_IFLNK;
+    mip->INODE.i_mode = 0120000;
     char buf[BLKSIZE];
     int blkno = balloc(dev);
     mip->INODE.i_block[0] = blkno;

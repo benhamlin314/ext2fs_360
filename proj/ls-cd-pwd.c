@@ -115,10 +115,8 @@ int list_file(char *path){
       if( ino == 0){
         return 0;
       }
+      ls_dir(ino);
     }
-
-    ls_dir(ino);
-
   return 0;
 }
 

@@ -55,6 +55,7 @@ int getino(int dev, char *pathname)
 #include "stat.c"
 #include "chmod.c"
 #include "link-unlink.c"
+#include "symlink.c"
 
 int init()
 {
