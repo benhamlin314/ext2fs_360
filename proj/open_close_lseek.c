@@ -161,16 +161,61 @@ int truncate(MINODE *mip){
     }
   }
 
+
+  mip->INODE.i_size = 0;
+  mip->dirty = 1;
+  iput(mip);
 }
 
 int close_file(int fd){
-
+  if(fd > 9 || fd < 0){
+    return -1;
+  }
+  if(running->fd[fd] != 0){ //Not Null, Pointing At Something
+    OFT * oftp = (OFT *)malloc(sizeof(OFT));
+    oftp = running->fd[fd];
+    running->fd[fd] = 0;
+    oftp->refCount--;
+    if (oftp->refCount > 0){
+      return 0;
+    }
+    
+    // last user of this OFT entry ==> dispose of the Minode[]
+    MINODE *mip = oftp->minodeptr;
+    truncate(mip);
+    idealloc(dev,mip->INODE);
+    //Do you need to call rm_child?
+    mip->dirty=1;
+    iput(mip);
+    
+    return 0; 
+  }
 }
+
 int lseek(int fd, int position){
   //From fd find the OFT entry
-  if(running->fd[fd] != 0){
+  if(running->fd[fd] != 0){ //File Isnt NULL
+    int original_position = 0;
+    //Must check to make sure it doesnt overstep the position.
 
+    if(position < 0){ //Under Start Of File
+      printf("Cannot be less that offset 0\n");
+      original_position=running->fd[fd]->offset; //Grab original position to return
+      running->fd[fd]->offset = 0; //reset new position to zero
+      return original_position; //return original position
+    }
+    else if(running->fd[fd]->minodeptr->INODE.i_size < position){ //Passed End Of File
+      original_position=running->fd[fd]->offset; //Grab original position to return
+      running->fd[fd]->offset = (running->fd[fd]->minodeptr->INODE.i_size)-1; //reset new position to end of file
+      return original_position; //return original position
+    }
+    else{ //The good position
+      original_position=running->fd[fd]->offset; //Grab original position to return
+      running->fd[fd]->offset = position; //reset new position
+      return original_position; //return original position
+    }
   }
+  return -1; //Error with file
   //Change the OFT offset, do not overstep or understep
   //return Original position
 }
