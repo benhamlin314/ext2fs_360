@@ -9,8 +9,8 @@ int read_file(){
   fd = atoi(fdstr);
   nbytes = atoi(nbytesstr);
   char buf[256*256*256];
-  if(running->cwd->fd[fd] != 0){
-    if(running->cwd->fd[fd]->mode == 0 || running->cwd->fd[fd]->mode == 2){
+  if(running->fd[fd] != 0){
+    if(running->fd[fd]->mode == 0 || running->fd[fd]->mode == 2){
       return my_read(fd,buf,nbytes);
     }
     else{
@@ -27,13 +27,13 @@ int my_read(int fd, char * buf, int nbytes){
   MINODE *mip, *mip2;
   mip = running->cwd;
   int count = 0, blk;
-  int available = running->cwd->fd[fd]->mptr->INODE.i_size - running->cwd->fd[fd]->offset;
+  int available = running->fd[fd]->mptr->INODE.i_size - running->fd[fd]->offset;
   char  *cp = buf, readbuf[BLKSIZE];
-  mip2 = mip->fd[fd]->mptr;
+  mip2 = running->fd[fd]->mptr;
 
   while(nbytes && available){
-    int lbk = mip->fd[fd]->offset / BLKSIZE;
-    int startbyte = mip->fd[fd]->offset % BLKSIZE;
+    int lbk = running->fd[fd]->offset / BLKSIZE;
+    int startbyte = running->fd[fd]->offset % BLKSIZE;
 
     if(lbk < 12){
       blk = mip2->INODE.i_block[lbk];
@@ -51,7 +51,7 @@ int my_read(int fd, char * buf, int nbytes){
         {
           int block_storage[256];
           get_block(mip2->dev,dbl_indirect[j-1],block_storage);
-          blk = block_storage[lbk];
+          blk = block_storage[lbk-(256*j+12)];
           break;
         }
       }
@@ -68,7 +68,7 @@ int my_read(int fd, char * buf, int nbytes){
         break;
       }
       strncpy(buf,store,optimizer);
-      mip->fd[fd]->offset+=optimizer;
+      running->fd[fd]->offset+=optimizer;
       count += optimizer;
       available -= optimizer;
       nbytes -= optimizer;
@@ -80,7 +80,7 @@ int my_read(int fd, char * buf, int nbytes){
         break;
       }
       *store++ = *cp++;
-      mip->fd[fd]->offset++;
+      running->fd[fd]->offset++;
       count++;
       available--;
       nbytes--;
@@ -94,20 +94,24 @@ int cat_file(){
   char buf[BLKSIZE], temp = 0;
   int n, i = 0;
 
-  //int fd = open()
-
-  while( n = my_read(int fd, buf, BLKSIZE)){
-    buf[n] = temp;
-    for(i=0;i<n;i++){
-      if(buf[i] == '\\'){
-        if(buf[i+1] == n){
-          putchar('\n');
-          i++;
+  int fd = open_file(0);
+  if(fd > -1){
+    while( n = my_read(int fd, buf, BLKSIZE)){
+      buf[n] = temp;
+      for(i=0;i<n;i++){
+        if(buf[i] == '\\'){
+          if(buf[i+1] == n){
+            putchar('\n');
+            i++;
+          }
+        }else{
+          putchar(buf[i]);
         }
-      }else{
-        putchar(buf[i]);
       }
     }
+    close_file(fd);
   }
-  close(fd);
+  else{
+    printf("ERROR: couldn't open file to read\n");
+  }
 }
