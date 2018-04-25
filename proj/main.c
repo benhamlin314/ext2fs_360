@@ -57,7 +57,6 @@ int getino(int dev, char *pathname)
 #include "link-unlink.c"
 #include "symlink.c"
 #include "touch.c"
-#include "symlink.c"
 #include "rm.c"
 #include "open_close_lseek.c"
 #include "read-cat.c"

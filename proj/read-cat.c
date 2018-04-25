@@ -59,7 +59,7 @@ int my_read(int fd, char * buf, int nbytes){
     int optimizer = 64;//change this to alter optimization make it a
 
     char *store = readbuf + startbyte;
-    remain = BLKSIZE - startbyte;
+    int remain = BLKSIZE - startbyte;
     while(remain > 0){
       if(nbytes-optimizer <= 0 || available-optimizer <= 0){
         break;

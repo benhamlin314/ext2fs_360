@@ -136,9 +136,9 @@ int my_write(int fd, char buf[], int nbytes){
 int my_cp(char *dest){
   int n = 0;
   char buf[BLKSIZE];
-  int fd = open(0);//opens pathname for read
+  int fd = open_file(0);//opens pathname for read
   strcpy(pathname, dest);//sets destination for Pathname
-  int gd = open(1);
+  int gd = open_file(1);
   if(fd == -1 && gd == -1){//both failed
     printf("ERROR: copy failed\n");
   }
