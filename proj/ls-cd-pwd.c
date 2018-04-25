@@ -126,11 +126,18 @@ int change_dir(char *path){
   int nlen = 0;
   int cur = 0;
   char * temp;
-  if(path[0] == '/'){
+  if(strcmp(path,"/")==0){
     tip = iget(dev,2);
+    running->cwd = tip;
+    return 0;
   }
   else{
-    tip = running->cwd;
+    if(path[0] == '/'){
+    tip = iget(dev,2);
+    }
+    else{
+      tip = running->cwd;
+    }
   }
   temp = strtok(path, "/");
   name[nlen++]= temp;
@@ -200,6 +207,9 @@ int rpwd(INODE *ip){
   //Begin Loop Process
   if(dp->inode == dp2->inode){ //Check . Against ..
     printf("/");
+    if(strcmp(charArray,"..")==0){
+      return 0;
+    }
     printf("%s/",charArray);
     return 0;
   }

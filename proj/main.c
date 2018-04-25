@@ -9,7 +9,10 @@
 #include "type.h"
 #include "globals.h"
 #include "getino.c"
+<<<<<<< HEAD
 
+=======
+>>>>>>> level-2-morgan
 
 MINODE minode[NMINODE];
 MINODE *root;
@@ -34,18 +37,18 @@ int  n;            // number of token strings
 MINODE * iget(int dev, int ino)
 {
   printf("iget(%d %d): ", dev, ino);
-  return (MINODE *)kcwiget(dev, ino);
+  return (MINODE *)my_iget(dev, ino);
 }
 
 int iput(MINODE *mip)
 {
   printf("iput(%d %d)\n", mip->dev, mip->ino);
-  return kcwiput(mip);
+  return my_iput(mip);
 }
 
 int getino(int dev, char *pathname)
 {
-  return kcwgetino(dev, pathname);
+  return my_getino(dev, pathname);
 }
 
 #include "util.c"
@@ -58,6 +61,9 @@ int getino(int dev, char *pathname)
 #include "link-unlink.c"
 #include "symlink.c"
 #include "touch.c"
+#include "symlink.c"
+#include "rm.c"
+#include "open_close_lseek.c"
 
 
 int init()
@@ -152,7 +158,7 @@ main(int argc, char *argv[ ])
 
   //printf("hit a key to continue : "); getchar();
   while(1){
-    printf("Commands: [ls|cd|pwd|mkdir|creat|rmdir|stat|chmod|link|unlink|touch|quit]\n");
+    printf("Commands: [ls|cd|pwd|mkdir|creat|rmdir|rm|stat|chmod|link|unlink|touch|open|close|lseek|pfd|quit]\n");
     printf("Input: ");
     fgets(line, 128, stdin);
 
@@ -226,6 +232,26 @@ main(int argc, char *argv[ ])
     }
     if(strcmp(cmd, "readlink")==0){
       my_readlink();
+    }
+    if(strcmp(cmd, "rm")==0){
+      my_rm();
+    }
+    if(strcmp(cmd,"open")==0){
+      int mode = atoi(tempPathName);
+      open_file(mode);
+    }
+    if(strcmp(cmd,"close")==0){
+      int mode = atoi(pathname);
+      close_file(mode);
+    }
+    if(strcmp(cmd, "lseek")==0){
+      int fd = atoi(pathname);
+      int position = atoi(tempPathName);
+      printf("fd: %d\tposition: %d\n",fd,position);
+      my_lseek(fd,position);
+    }
+    if(strcmp(cmd, "pfd")==0){
+      my_pfd();
     }
   }
 }

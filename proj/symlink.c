@@ -7,7 +7,11 @@ int my_symlink(char *oldname, char *newname){
     creat_file();
     int ino2 = getino(dev, newname);
     MINODE *mip = iget(dev, ino2);
+<<<<<<< HEAD
     mip->INODE.i_mode = 0120000;
+=======
+    mip->INODE.i_mode = 0; //Not correct
+>>>>>>> level-2-morgan
     char buf[BLKSIZE];
     int blkno = balloc(dev);
     mip->INODE.i_block[0] = blkno;
