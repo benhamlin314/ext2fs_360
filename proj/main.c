@@ -8,7 +8,7 @@
 
 #include "type.h"
 #include "globals.h"
-
+#include "getino.c"
 
 MINODE minode[NMINODE];
 MINODE *root;
@@ -32,18 +32,18 @@ int  n;            // number of token strings
 MINODE * iget(int dev, int ino)
 {
   printf("iget(%d %d): ", dev, ino);
-  return (MINODE *)kcwiget(dev, ino);
+  return (MINODE *)my_iget(dev, ino);
 }
 
 int iput(MINODE *mip)
 {
   printf("iput(%d %d)\n", mip->dev, mip->ino);
-  return kcwiput(mip);
+  return my_iput(mip);
 }
 
 int getino(int dev, char *pathname)
 {
-  return kcwgetino(dev, pathname);
+  return my_getino(dev, pathname);
 }
 
 #include "util.c"

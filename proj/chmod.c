@@ -33,9 +33,9 @@ int my_chmod(char new_mode[]){
   char temp_pathname[64];
   strcpy(temp_pathname,pathname);
   char * chmod_parent = dirname(temp_pathname);
-  strcpy(temp_pathname,pathname);
-  char * chmod_child = basename(temp_pathname);
+  char * chmod_child = basename(pathname);
 
+  printf("PARENT: %s\tCHILD: %s\n\n\n\n",chmod_parent,chmod_child);
   //Get The Parent INODE
   int inom = getino(dev,chmod_parent);
   mip = iget(dev, inom);

@@ -2,29 +2,6 @@
 
 //This File Will House Link and Unlink Functions
 
-
-
-
-my_link_creat(MINODE *pip, char *name, int ino){
-
-  //Do Not Allocate A New ino Number
-  printf("CHILD NAME: %s\n",name);
-  //Begin Process For Writing INODE into a MINODE[]
-  MINODE *mip = iget(dev,ino);
-  INODE *ip = &(mip->INODE);
-  ip->i_mode = 0x81A4;
-  ip->i_uid = running->uid;
-  ip->i_gid = running->gid;
-  ip->i_size = 0;
-  ip->i_links_count = 1;
-  ip->i_atime = ip->i_ctime = ip->i_mtime = time(0L);
-  ip->i_blocks = 0;
-  enter_name(pip,ino,name);
-  mip->dirty = 1;
-  iput(mip);
-
-}
-
 int my_link(char oldfile[], char newfile[]){
   //Input Structure: link oldFile newFile
 
@@ -52,7 +29,8 @@ int my_link(char oldfile[], char newfile[]){
     //Add Entry To New Dir
     if(parent_ip->INODE.i_mode == 0x41ED){ //Parent Is A Directory
       //Call my_link_creat to create the new file with the old inumber
-      my_link_creat(parent_ip,child,old_ino); //parent,child(name),old_ino
+      enter_name(parent_ip,old_ino,child);
+
       parent_ip->dirty = 1;
       parent_ip->INODE.i_atime = time(0L);
     }
@@ -95,22 +73,16 @@ int my_unlink(char oldfile[]){
     
     if(old_ip->INODE.i_links_count == 0){ //Must Remove Because Links = 0
       //Deallocate All Blocks
-      int i = 0;
-      for(i = 0; i < 12; i++){
-	if(old_ip->INODE.i_block[i] != 0){ //Check If Empty
-	  printf("Deallocating Block: [%d]\n"); //Debug Print
-	  bdealloc(dev, old_ip->INODE.i_block[i]); //Actual BDealloc
-	}
-      }
+      truncate(old_ip);
       //Deallocate Inode Itself
       idealloc(dev, old_ip->ino);
       
-      //Remove The Name From Parent
-      int parent_ino = getino(dev,parent);
-      MINODE *parent_ip = iget(dev,parent_ino);
-      rm_child(parent_ip,child);
-      iput(parent_ip);
     }
+    //Remove The Name From Parent
+    int parent_ino = getino(dev,parent);
+    MINODE *parent_ip = iget(dev,parent_ino);
+    rm_child(parent_ip,child);
+    iput(parent_ip);
   }
   else{ //File Isnt File
     printf("Pathname Doesnt Lead To File\n");

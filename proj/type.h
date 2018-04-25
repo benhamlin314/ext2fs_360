@@ -13,7 +13,7 @@ typedef struct ext2_dir_entry_2 DIR;
 
 #define NMINODE    64
 #define NOFT       32
-#define NFD        16
+#define NFD        10
 #define NPROC       2
 
 typedef struct minode{

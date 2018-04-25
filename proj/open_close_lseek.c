@@ -34,14 +34,17 @@ int open_file(int mode){
 	    case 1:
 	      printf("Set Mode 1\n");
 	      truncate(mip);
+	      mip->INODE.i_mtime = time(0L);
 	      oftp->offset = 0;
 	      break;
 	    case 2:
 	      printf("Set Mode 2\n");
+	      mip->INODE.i_mtime = time(0L);
 	      oftp->offset = 0;
 	      break;
 	    case 3:
 	      printf("Set Mode 3\n");
+	      mip->INODE.i_mtime = time(0L);
 	      oftp->offset = mip->INODE.i_size;
 	      break;
 	    default:
@@ -128,40 +131,22 @@ int my_truncate(MINODE *mip){
   int j = 0;
   int ino;
   MINODE *temp_mip;
-  char buf[BLKSIZE];
-  char *cp;
-  DIR *dp;
+  int buf[256];
+  int indirect_buf[256];
   get_block(dev,mip->INODE.i_block[12],buf);
-  cp = buf;
-  dp = (DIR *)buf;
   for(j = 0; j < 256; j++){
-    ino=getino(dev,dp->inode);
-    temp_mip=iget(dev,ino);
-    for(int k = 0; k < 12; k++){
-      if(temp_mip->INODE.i_block[k] != 0){
-	bdealloc(dev,temp_mip->INODE.i_block[k]);
-      }
+    if(buf[j] != 0){
+	bdealloc(dev,buf);
     }
-    cp += dp->rec_len;
-    dp = (DIR *)cp;
   }
-  //Double Indirect NEED TO FIX THIS PART
+  //Double Indirect 
   get_block(dev,mip->INODE.i_block[13],buf);
-  char newbuf[BLKSIZE];
   for(int l = 0; l < 256; l++){
-    get_block(dev,buf[l],newbuf);
-    cp = newbuf;
-    dp = (DIR *)newbuf;
+    get_block(dev,buf[l],indirect_buf);
     for(int m = 0; m < 256; m++){
-      ino = getino(dev,dp->inode);
-      temp_mip=iget(dev,ino);
-      for(int n = 0; n < 12; n++){
-	if(temp_mip->INODE.i_block[n] != 0){
-	  bdealloc(dev,temp_mip->INODE.i_block[n]);
-	}
+      if(indirect_buf[m] != 0){
+	bdealloc(dev,indirect_buf[m]);
       }
-      cp += dp->rec_len;
-      dp = (DIR *)cp;
     }
   }
 
@@ -232,7 +217,6 @@ int my_pfd(){
   printf("---- ----- -------- -------\n");
   for(int i = 0; i < 10; i++){
     if(running->fd[i] == 0){
-      printf("none  none   none    none \n");
     }
     else{
       printf("  %d      %d     %d     [dev,%d]\n",i,running->fd[i]->mode,running->fd[i]->offset,running->fd[i]->mptr->ino);
