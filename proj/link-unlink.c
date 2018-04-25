@@ -2,30 +2,6 @@
 
 //This File Will House Link and Unlink Functions
 
-<<<<<<< HEAD
-
-my_link_creat(MINODE *pip, char *name, int ino){
-
-  //Do Not Allocate A New ino Number
-  printf("CHILD NAME: %s\n",name);
-  //Begin Process For Writing INODE into a MINODE[]
-  MINODE *mip = iget(dev,ino);
-  INODE *ip = &(mip->INODE);
-  ip->i_mode = 0x81A4;
-  ip->i_uid = running->uid;
-  ip->i_gid = running->gid;
-  ip->i_size = 0;
-  ip->i_links_count = 1;
-  ip->i_atime = ip->i_ctime = ip->i_mtime = time(0L);
-  ip->i_blocks = 0;
-  enter_name(pip,ino,name);
-  mip->dirty = 1;
-  iput(mip);
-
-}
-
-=======
->>>>>>> level-2-morgan
 int my_link(char oldfile[], char newfile[]){
   //Input Structure: link oldFile newFile
 
@@ -100,16 +76,7 @@ int my_unlink(char oldfile[]){
       truncate(old_ip);
       //Deallocate Inode Itself
       idealloc(dev, old_ip->ino);
-<<<<<<< HEAD
 
-      //Remove The Name From Parent
-      int parent_ino = getino(dev,parent);
-      MINODE *parent_ip = iget(dev,parent_ino);
-      rm_child(parent_ip,child);
-      iput(parent_ip);
-=======
-      
->>>>>>> level-2-morgan
     }
     //Remove The Name From Parent
     int parent_ino = getino(dev,parent);

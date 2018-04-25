@@ -9,10 +9,6 @@
 #include "type.h"
 #include "globals.h"
 #include "getino.c"
-<<<<<<< HEAD
-
-=======
->>>>>>> level-2-morgan
 
 MINODE minode[NMINODE];
 MINODE *root;
