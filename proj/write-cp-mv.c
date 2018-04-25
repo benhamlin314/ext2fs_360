@@ -101,7 +101,7 @@ int my_write(int fd, char buf[], int nbytes){
 
       get_block(mip->dev, blk, writebuf);
       char *cp = writebuf + startbyte;
-      remain = BLKSIZE - startbyte;
+      int remain = BLKSIZE - startbyte;
 
       if(remain == BLKSIZE){
         if(running->fd[fd]->offset > ip->i_size){
