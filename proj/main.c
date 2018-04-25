@@ -60,6 +60,8 @@ int getino(int dev, char *pathname)
 #include "symlink.c"
 #include "rm.c"
 #include "open_close_lseek.c"
+#include "read-cat.c"
+#include "write-cp-mv.c"
 
 
 int init()
@@ -248,6 +250,21 @@ main(int argc, char *argv[ ])
     }
     if(strcmp(cmd, "pfd")==0){
       my_pfd();
+    }
+    if(strcmp(cmd, "read")==0){
+      read_file();
+    }
+    if(strcmp(cmd, "cat")==0){
+      cat_file();
+    }
+    if(strcmp(cmd, "write")==0){
+      write_file();
+    }
+    if(strcmp(cmd, "cp")==0){
+      my_cp(tempPathName);
+    }
+    if(strcmp(cmd, "mv")==0){
+      my_mv();
     }
   }
 }
