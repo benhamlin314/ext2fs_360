@@ -21,38 +21,47 @@ int rmdir(){
   printf("%d %d\n", ip->i_uid, running->uid);
   if(ip->i_uid == running->uid ||  running->uid == 0){//checks to see if user owns dir or if user is super user getuid() is a systemcall
     printf("User can rmdir\n");
-    if(ip->i_mode != 0x41ED || mip->refCount > 0 || ip->i_links_count >= 2){//checks if not a dir or busy or not empty
-      printf("Might be empty %d %d\n", ip->i_links_count, mip->dirty);
-      if(ip->i_links_count == 2 && ip->i_mode == 0x41ED){
-      	printf("Checking if truly empty\n");
-      	char *cp;
-      	get_block(mip->dev, ip->i_block[0], buf);
+    if(ip->i_mode == 0x41ED){
+      if( mip->refCount == 0 ){
+        if( ip->i_links_count == 2){//checks if not a dir or busy or not empty
+          printf("Might be empty link count is %d\n", ip->i_links_count);
+        	printf("Checking if truly empty\n");
+        	char *cp;
+        	get_block(mip->dev, ip->i_block[0], buf);
 
-      	cp = buf;
-      	cp += 12;
-      	dp = (DIR *)cp;
+        	cp = buf;
+        	cp += 12;//points to ..
+        	dp = (DIR *)cp;
 
-      	if(dp->rec_len > 12){//dir contains files
-      	  empty = 1;
-      	}
-      	else{
-      	  empty = 0;//flag to check empty
-      	}
+        	if(dp->rec_len == 12){//dir contains files
+        	  empty = 1;
+        	}
+        	else{
+        	  empty = 0;//flag to check empty
+        	}
+          if(!empty){
+            printf("ERROR: Dir not empty\n");
+            return -1;
+          }
+        }
+        else{
+          printf("ERROR: Dir not empty\n");
+          return -1;
+        }
       }
-      if(!empty){
-	       return -1;
+      else{
+        printf("ERROR: Dir is busy\n");
+        return -1;
       }
+    }
+    else
+    {
+      printf("ERROR: Not a dir\n");
+      return -1;
     }
     pip = iget(mip->dev, dp->inode);//dp already points to ..
     getmyname(pip, mip->ino, myname);
-    //replace with truncate
-    int i = 0;
-    for(i = 0; i < 12; i++){//deallocate block loop
-      if(ip->i_block[i] != 0){
-      	printf("Deallocating block %d\n", i);
-      	bdealloc(mip->dev, ip->i_block[i]);
-      }
-    }
+    truncate(mip);
     printf("Deallocate inode\n");
     idealloc(mip->dev, mip->ino);
     mip->dirty = 1;

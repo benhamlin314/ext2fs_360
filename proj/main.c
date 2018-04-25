@@ -220,10 +220,9 @@ main(int argc, char *argv[ ])
       my_touch();
     }
     if(strcmp(cmd, "symlink")==0){
-      char *oldname, *newname;
-      oldname = strtok(pathname, " ");
-      newname = strtok(0," ");
-      my_symlink(oldname,newname);
+      char temp[64];
+      strcpy(temp,pathname);
+      my_symlink(temp,tempPathName);
     }
     if(strcmp(cmd, "readlink")==0){
       my_readlink();
