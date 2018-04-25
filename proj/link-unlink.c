@@ -3,8 +3,6 @@
 //This File Will House Link and Unlink Functions
 
 
-
-
 my_link_creat(MINODE *pip, char *name, int ino){
 
   //Do Not Allocate A New ino Number
@@ -47,7 +45,7 @@ int my_link(char oldfile[], char newfile[]){
     int parent_ino = getino(dev,parent);
     MINODE *parent_ip = iget(dev,parent_ino);
     printf("Parent ino: %d\n",parent_ino);
-  
+
 
     //Add Entry To New Dir
     if(parent_ip->INODE.i_mode == 0x41ED){ //Parent Is A Directory
@@ -92,7 +90,7 @@ int my_unlink(char oldfile[]){
     //Remove Links Count, Make It Dirty
     old_ip->INODE.i_links_count--;
     old_ip->dirty = 1;
-    
+
     if(old_ip->INODE.i_links_count == 0){ //Must Remove Because Links = 0
       //Deallocate All Blocks
       int i = 0;
@@ -104,7 +102,7 @@ int my_unlink(char oldfile[]){
       }
       //Deallocate Inode Itself
       idealloc(dev, old_ip->ino);
-      
+
       //Remove The Name From Parent
       int parent_ino = getino(dev,parent);
       MINODE *parent_ip = iget(dev,parent_ino);

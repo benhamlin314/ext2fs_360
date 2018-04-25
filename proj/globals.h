@@ -13,6 +13,7 @@ extern int fd, dev;
 extern int nblocks, ninodes, bmap, imap, iblk;//might remove once get to level 3 these will be contained in mtable
 extern char line[128], cmd[32], pathname[64];
 
+extern char tempPathName[64];
 extern char gpath[128];   // hold tokenized strings
 extern char *name[64];    // token string pointers
-extern int  n;            // number of token strings 
+extern int  n;            // number of token strings

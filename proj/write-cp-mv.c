@@ -1,7 +1,21 @@
 #include "globals.h"
 
 int write_file(){
-
+  int fd, nbytes;
+  fd = atoi(pathname);
+  nbytes = strlen(tempPathName);
+  if(running->fd[fd] != 0){
+    if(running->fd[fd]->mode == 1 || running->fd[fd]->mode == 2){
+      return my_write(fd,tempPathName,nbytes);
+    }
+    else{
+      printf("ERROR: File desciptor not open to Write\n");
+    }
+  }
+  else{
+    printf("ERROR: File desciptor not open\n");
+  }
+  return -1;
 }
 
 int my_write(int fd, char buf[], int nbytes){
@@ -15,7 +29,12 @@ int my_write(int fd, char buf[], int nbytes){
 
       if(lbk < 12){
         if(ip->i_block[lbk] == 0){
-          ip->i_block[lbk] = balloc(mip->dev);
+          int nblk = balloc(mip->dev);
+          if(!nblk){
+            printf("ERROR: no more free blocks\n");
+            return -1;
+          }
+          ip->i_block[lbk] = nblk;
         }
         blk = ip->i_block[lbk];
       }
@@ -23,12 +42,20 @@ int my_write(int fd, char buf[], int nbytes){
         int indirect[256];
         if(ip->i_block[12] == 0){
           int nblk = balloc(mip->dev);
+          if(!nblk){
+            printf("ERROR: no more free blocks\n");
+            return -1;
+          }
           ip->i_block[12] = nblk;
         }
         get_block(mip->dev,ip->i_block[12],indirect);
         blk = indirect[lbk-12];
         if(blk == 0){
           int nblk = balloc(mip->dev);
+          if(!nblk){
+            printf("ERROR: no more free blocks\n");
+            return -1;
+          }
           indirect[lbk-12] = nblk;
           blk = indirect[lbk-12];
         }
@@ -38,16 +65,35 @@ int my_write(int fd, char buf[], int nbytes){
         int dbl_indirect[256];
         if(ip->i_block[13] == 0){
           int nblk = balloc(mip->dev);
+          if(!nblk){
+            printf("ERROR: no more free blocks\n");
+            return -1;
+          }
           ip->i_block[13] = nblk;
         }
         get_block(mip->dev,mip->INODE.i_block[13],dbl_indirect);
         for(int j = 1; j<257; j++){
-          //NOT FINISHED HERE
+          if(dbl_indirect[j-1] == 0){
+            int blocky = balloc(mip->dev);
+            if(!blocky){
+              printf("ERROR: no more free blocks\n");
+              return -1;
+            }
+            dbl_indirect[j-1] = blocky;
+          }
           if(lbk >= 256*j+12 && lbk < 256*(j+1) + 12)
           {
             int block_storage[256];
             get_block(mip->dev,dbl_indirect[j-1],block_storage);
             blk = block_storage[lbk-(256*j+12)];
+            if (blk == 0){
+              int nblk = balloc(mip->dev);
+              if(!nblk){
+                printf("ERROR: no more free blocks\n");
+                return -1;
+              }
+              block_storage[lbk-(256*j+12)] = nblk;
+            }
             break;
           }
         }
@@ -118,6 +164,15 @@ int my_cp(char *dest){
   }
 }
 
-int my_mv(char *dest){
-
+int my_mv(){
+  int ino = getino(dev,pathname);
+  if(!ino){
+    if(my_link(pathname,tempPathName)){
+      my_rm();
+    }
+    else{
+      printf("ERROR: move failed\n");
+      return -1;
+    }
+  }
 }

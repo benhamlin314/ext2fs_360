@@ -8,7 +8,7 @@
 
 #include "type.h"
 #include "globals.h"
-
+#include "getino.c"
 
 
 MINODE minode[NMINODE];
@@ -26,6 +26,7 @@ int fd, dev;
 int nblocks, ninodes, bmap, imap, iblk;
 char line[128], cmd[32], pathname[64];
 
+char tempPathName[64];
 char gpath[128];   // hold tokenized strings
 char *name[64];    // token string pointers
 int  n;            // number of token strings
@@ -161,7 +162,7 @@ main(int argc, char *argv[ ])
       continue;
     pathname[0] = 0;
     char permissions[64];
-    char tempPathName[64];
+
     sscanf(line, "%s %s %s", cmd, pathname,tempPathName);
     printf("cmd=%s pathname=%s\n", cmd, pathname);
 

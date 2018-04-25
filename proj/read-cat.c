@@ -2,13 +2,10 @@
 
 int read_file(){
   //pathname contains the fd number and nbytes to read
-  char *fdstr,*nbytesstr;
-  fdstr = strtok(pathname," ");
-  nbytesstr = strtok(0," ");
   int fd, nbytes;
-  fd = atoi(fdstr);
-  nbytes = atoi(nbytesstr);
-  char buf[256*256*256];
+  fd = atoi(pathname);
+  nbytes = atoi(tempPathName);
+  char buf[(256+12+256*256)*BLKSIZE];
   if(running->fd[fd] != 0){
     if(running->fd[fd]->mode == 0 || running->fd[fd]->mode == 2){
       return my_read(fd,buf,nbytes);
@@ -91,16 +88,15 @@ int my_read(int fd, char * buf, int nbytes){
 }
 
 int cat_file(){
-  char buf[BLKSIZE], temp = 0;
+  char buf[BLKSIZE];
   int n, i = 0;
 
   int fd = open_file(0);
   if(fd > -1){
-    while( n = my_read(int fd, buf, BLKSIZE)){
-      buf[n] = temp;
+    while( n = my_read(fd, buf, BLKSIZE)){
       for(i=0;i<n;i++){
         if(buf[i] == '\\'){
-          if(buf[i+1] == n){
+          if(buf[i+1] == 'n'){
             putchar('\n');
             i++;
           }
