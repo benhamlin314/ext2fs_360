@@ -5,7 +5,7 @@ int read_file(){
   int fd, nbytes;
   fd = atoi(pathname);
   nbytes = atoi(tempPathName);
-  char buf[(256+12+256*256)*BLKSIZE];
+  char buf[(256+12+256*256)*BLKSIZE];//buf large enough to hold the entire file
   if(running->fd[fd] != 0){
     if(running->fd[fd]->mode == 0 || running->fd[fd]->mode == 2){
       return my_read(fd,buf,nbytes);
@@ -24,11 +24,15 @@ int my_read(int fd, char * buf, int nbytes){
   MINODE *mip, *mip2;
   mip = running->cwd;
   int count = 0, blk;
+  if(nbytes > running->fd[fd]->mptr->INODE.i_size){
+    nbytes = running->fd[fd]->mptr->INODE.i_size;//if nbytes is more than size set it to size
+  }
   int available = running->fd[fd]->mptr->INODE.i_size - running->fd[fd]->offset;
   char  *cp = buf, readbuf[BLKSIZE];
   mip2 = running->fd[fd]->mptr;
 
   while(nbytes && available){
+    //maps logic block to physical block
     int lbk = running->fd[fd]->offset / BLKSIZE;
     int startbyte = running->fd[fd]->offset % BLKSIZE;
 
@@ -56,39 +60,16 @@ int my_read(int fd, char * buf, int nbytes){
     if(blk == 0){
       return count;
     }
+    //end mapping
     get_block(mip->dev, blk, readbuf);
 
-    //int optimizer = 64;//change this to alter optimization make it a
 
     char *store = readbuf + startbyte;
     int remain = BLKSIZE - startbyte;
-    /*while(remain > 0){
-      if(nbytes-optimizer <= 0 || available-optimizer <= 0){
-        break;
-      }
-      strncpy(buf,store,optimizer);
-      running->fd[fd]->offset+=optimizer;
-      count += optimizer;
-      available -= optimizer;
-      nbytes -= optimizer;
-      remain -= optimizer;
-    }
-    //transfers left over when less than 64 nbytes
-    while(remain > 0){
-      if(nbytes <= 0 || available <= 0){
-        break;
-      }
-      *store++ = *cp++;
-      running->fd[fd]->offset++;
-      count++;
-      available--;
-      nbytes--;
-      remain--;
-    }*/
     while(remain > 0){
       if(nbytes-BLKSIZE > 0){
-        printf("BLKSIZE to read\n");
-        strncpy(buf, store, BLKSIZE);
+        //printf("BLKSIZE to read\n");
+        strncpy(buf, readbuf, BLKSIZE);
         count += BLKSIZE;
         nbytes -= BLKSIZE;
         available -= BLKSIZE;
@@ -100,13 +81,16 @@ int my_read(int fd, char * buf, int nbytes){
         }
       }
       else{
-        printf("less than BLKSIZE to read\n");
-        strncpy(buf, store, nbytes);
+        //printf("less than BLKSIZE to read\n");
+        strncpy(buf, readbuf, nbytes);
         count += nbytes;
         available -= nbytes;
         remain -= nbytes;
         running->fd[fd]->offset += nbytes;
         nbytes -= nbytes;
+        if(nbytes <= 0){
+          break;
+        }
       }
     }
   }
@@ -122,7 +106,7 @@ int cat_file(){
     while( n = my_read(fd, buf, BLKSIZE)){
       for(i=0;i<n;i++){
         if(buf[i] == '\\'){
-          if(buf[i+1] == 'n'){
+          if(buf[i+1] == 'n'){//if new line print new line
             putchar('\n');
             i++;
           }

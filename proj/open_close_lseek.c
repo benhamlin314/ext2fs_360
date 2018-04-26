@@ -7,116 +7,121 @@ int open_file(int mode){
   //2) Get pathnames inumber
   //3) Get Its MINODE Pointer
   int ino = getino(dev,pathname);
-  MINODE *mip = iget(dev,ino);
-  int i=0;
-  int j=0;
-  //4) Check Inodes i_mode to verify Regular File And Permissions OK
-  if(mip->INODE.i_mode != 0x41ED){
-    printf("Is File\n");
-    for(i = 0; i < 10; i++){
-      printf("Iteration: %d\n\n",i);
+  if(ino){
+    MINODE *mip = iget(dev,ino);
+    int i=0;
+    int j=0;
+    //4) Check Inodes i_mode to verify Regular File And Permissions OK
+    if(mip->INODE.i_mode != 0x41ED){
+      printf("Is File\n");
+      for(i = 0; i < 10; i++){
+        printf("Iteration: %d\n\n",i);
 
-      if(running->fd[i] == 0){ //There is NO File
-	printf("NO FILE\n");
-	for(j = 0; j < 10; j++){
-	  printf("Sub Iteration: %d\n",j);
-	  if(running->fd[j] == 0){
-	    OFT * oftp = (OFT *)malloc(sizeof(OFT));
-	    oftp->mode = mode;
-	    oftp->refCount = 1;
-	    mip->INODE.i_atime = time(0L);
-	    oftp->mptr = mip;
-	    switch(mode){
-	    case 0:
-	      printf("Set Mode 0\n");
-	      oftp->offset = 0;
-	      break;
-	    case 1:
-	      printf("Set Mode 1\n");
-	      truncate(mip);
-	      mip->INODE.i_mtime = time(0L);
-	      oftp->offset = 0;
-	      break;
-	    case 2:
-	      printf("Set Mode 2\n");
-	      mip->INODE.i_mtime = time(0L);
-	      oftp->offset = 0;
-	      break;
-	    case 3:
-	      printf("Set Mode 3\n");
-	      mip->INODE.i_mtime = time(0L);
-	      oftp->offset = mip->INODE.i_size;
-	      break;
-	    default:
-	      printf("Invalid Mode\n");
-	      return -1;
-	    }
-	    //Set Running Equal To OFTP and Return The i Value
-	    running->fd[j] = oftp;
-	    return j;
-	    }
-	}
-      }
-      else{ //There Is File Check
-	printf("Ran into File, Check\n");
-	if(running->fd[i]->mptr->ino == ino){
-	  if(running->fd[i]->mode == 1){ //Write Mode
-	    printf("Open For Incorrect Mode\n");
-	    return -1;
-	  }
-	  else if(running->fd[i]->mode == 2){ //Read Write Mode
-	    printf("Open For Incorrect Mode\n");
-	    return -1;
-	  }
-	  else if(running->fd[i]->mode == 3){ //Append Mode
-	    printf("Open For Incorrect Mode\n");
-	    return -1;
-	  }
-	  else if(running->fd[i]->mode == 0 && mode != 0){
-	    printf("File Is Open For Read\n");
-	    return -1;
-	  }
-	  else{ //Must Be Read Mode If This Is Reached
-	    for(j = 0; j < 10; j++){
-	      if(running->fd[j] == 0){
-		OFT * oftp = (OFT *)malloc(sizeof(OFT));
-		oftp->mode = mode;
-		oftp->refCount = 1;
-		mip->INODE.i_atime = time(0L);
-		oftp->mptr = mip;
-		switch(mode){
-		case 0:
-		  printf("Case 0\n");
-		  oftp->offset = 0;
-		  break;
-		case 1:
-		  printf("Case 1\n");
-		  truncate(mip);
-		  oftp->offset = 0;
-		  break;
-		case 2:
-		  printf("Case 2\n");
-		  oftp->offset = 0;
-		  break;
-		case 3:
-		  printf("Case 3\n");
-		  oftp->offset = mip->INODE.i_size;
-		  break;
-		default:
-		  printf("Invalid Mode\n");
-		  return -1;
-		}
-		//Set Running Equal To OFTP and Return The i Value
-		running->fd[j] = oftp;
-		return j;
-	      }
-	    }
-	  }
-	}
+        if(running->fd[i] == 0){ //There is NO File
+        	printf("NO FILE\n");
+        	for(j = 0; j < 10; j++){
+        	  printf("Sub Iteration: %d\n",j);
+        	  if(running->fd[j] == 0){
+        	    OFT * oftp = (OFT *)malloc(sizeof(OFT));
+        	    oftp->mode = mode;
+        	    oftp->refCount = 1;
+        	    mip->INODE.i_atime = time(0L);
+        	    oftp->mptr = mip;
+        	    switch(mode){
+        	    case 0:
+        	      printf("Set Mode 0\n");
+        	      oftp->offset = 0;
+        	      break;
+        	    case 1:
+        	      printf("Set Mode 1\n");
+        	      truncate(mip);
+        	      mip->INODE.i_mtime = time(0L);
+        	      oftp->offset = 0;
+        	      break;
+        	    case 2:
+        	      printf("Set Mode 2\n");
+        	      mip->INODE.i_mtime = time(0L);
+        	      oftp->offset = 0;
+        	      break;
+        	    case 3:
+        	      printf("Set Mode 3\n");
+        	      mip->INODE.i_mtime = time(0L);
+        	      oftp->offset = mip->INODE.i_size;
+        	      break;
+        	    default:
+        	      printf("Invalid Mode\n");
+        	      return -1;
+        	    }
+        	    //Set Running Equal To OFTP and Return The i Value
+        	    running->fd[j] = oftp;
+        	    return j;
+        	    }
+        	}
+              }
+              else{ //There Is File Check
+        	printf("Ran into File, Check\n");
+        	if(running->fd[i]->mptr->ino == ino){
+        	  if(running->fd[i]->mode == 1){ //Write Mode
+        	    printf("Open For Incorrect Mode\n");
+        	    return -1;
+        	  }
+        	  else if(running->fd[i]->mode == 2){ //Read Write Mode
+        	    printf("Open For Incorrect Mode\n");
+        	    return -1;
+        	  }
+        	  else if(running->fd[i]->mode == 3){ //Append Mode
+        	    printf("Open For Incorrect Mode\n");
+        	    return -1;
+        	  }
+        	  else if(running->fd[i]->mode == 0 && mode != 0){
+        	    printf("File Is Open For Read\n");
+        	    return -1;
+        	  }
+        	  else{ //Must Be Read Mode If This Is Reached
+        	    for(j = 0; j < 10; j++){
+        	      if(running->fd[j] == 0){
+        		OFT * oftp = (OFT *)malloc(sizeof(OFT));
+        		oftp->mode = mode;
+        		oftp->refCount = 1;
+        		mip->INODE.i_atime = time(0L);
+        		oftp->mptr = mip;
+        		switch(mode){
+        		case 0:
+        		  printf("Case 0\n");
+        		  oftp->offset = 0;
+        		  break;
+        		case 1:
+        		  printf("Case 1\n");
+        		  truncate(mip);
+        		  oftp->offset = 0;
+        		  break;
+        		case 2:
+        		  printf("Case 2\n");
+        		  oftp->offset = 0;
+        		  break;
+        		case 3:
+        		  printf("Case 3\n");
+        		  oftp->offset = mip->INODE.i_size;
+        		  break;
+        		default:
+        		  printf("Invalid Mode\n");
+        		  return -1;
+        		}
+        		//Set Running Equal To OFTP and Return The i Value
+        		running->fd[j] = oftp;
+        		return j;
+        	      }
+        	    }
+        	  }
+        	}
+        }
       }
     }
+    iput(mip);
   }
-  iput(mip);
+  else{
+    return -1;
+  }
 }
 
 int my_truncate(MINODE *mip){

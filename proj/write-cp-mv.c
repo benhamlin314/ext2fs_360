@@ -147,7 +147,9 @@ int my_cp(char *dest){
   char buf[BLKSIZE];
   int fd = open_file(0);//opens pathname for read
   strcpy(pathname, dest);//sets destination for Pathname
+  //printf("pathname = %s\n", pathname);
   int gd = open_file(1);
+  //printf("fd is %d, gd is %d\n",fd, gd);
   if(fd == -1 && gd == -1){//both failed
     printf("ERROR: copy failed both\n");
     return -1;
@@ -158,6 +160,8 @@ int my_cp(char *dest){
     return -1;
   }
   else if(gd == -1){//only gd failed
+    strcpy(pathname, dest);
+    //printf("pathname = %s\n", pathname);
     creat_file();
     gd = open_file(1);
     int tot = 0;
@@ -171,6 +175,7 @@ int my_cp(char *dest){
     return tot;
   }
   else{//both succeeded
+    printf("Both fd opened\n");
     int tot = 0;
     while( n = my_read(fd,buf,BLKSIZE)){
       tot += my_write(gd,buf,n);
