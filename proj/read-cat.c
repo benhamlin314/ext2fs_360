@@ -38,7 +38,7 @@ int my_read(int fd, char * buf, int nbytes){
     else if(lbk >= 12 && lbk < 256 + 12){
       int indirect[256];
       get_block(mip2->dev,mip2->INODE.i_block[12],indirect);
-      blk = indirect[lbk];
+      blk = indirect[lbk-12];
     }
     else{
       int dbl_indirect[256];
@@ -53,14 +53,16 @@ int my_read(int fd, char * buf, int nbytes){
         }
       }
     }
-
+    if(blk == 0){
+      return count;
+    }
     get_block(mip->dev, blk, readbuf);
 
-    int optimizer = 64;//change this to alter optimization make it a
+    //int optimizer = 64;//change this to alter optimization make it a
 
     char *store = readbuf + startbyte;
     int remain = BLKSIZE - startbyte;
-    while(remain > 0){
+    /*while(remain > 0){
       if(nbytes-optimizer <= 0 || available-optimizer <= 0){
         break;
       }
@@ -71,7 +73,7 @@ int my_read(int fd, char * buf, int nbytes){
       nbytes -= optimizer;
       remain -= optimizer;
     }
-    //transfers left over when less than 32 nbytes
+    //transfers left over when less than 64 nbytes
     while(remain > 0){
       if(nbytes <= 0 || available <= 0){
         break;
@@ -82,6 +84,30 @@ int my_read(int fd, char * buf, int nbytes){
       available--;
       nbytes--;
       remain--;
+    }*/
+    while(remain > 0){
+      if(nbytes-BLKSIZE > 0){
+        printf("BLKSIZE to read\n");
+        strncpy(buf, store, BLKSIZE);
+        count += BLKSIZE;
+        nbytes -= BLKSIZE;
+        available -= BLKSIZE;
+        remain -= BLKSIZE;
+        running->fd[fd]->offset += BLKSIZE;
+
+        if(nbytes <= 0){
+          break;
+        }
+      }
+      else{
+        printf("less than BLKSIZE to read\n");
+        strncpy(buf, store, nbytes);
+        count += nbytes;
+        available -= nbytes;
+        remain -= nbytes;
+        running->fd[fd]->offset += nbytes;
+        nbytes -= nbytes;
+      }
     }
   }
   return count;
@@ -105,6 +131,7 @@ int cat_file(){
         }
       }
     }
+    printf("\n");//print new line
     close_file(fd);
   }
   else{

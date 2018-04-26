@@ -155,7 +155,7 @@ main(int argc, char *argv[ ])
 
   //printf("hit a key to continue : "); getchar();
   while(1){
-    printf("Commands: [ls|cd|pwd|mkdir|creat|rmdir|rm|stat|chmod|link|unlink|touch|open|close|lseek|pfd|quit]\n");
+    printf("Commands: [ls|cd|pwd|mkdir|creat|rmdir|rm|stat|chmod|link|unlink|touch|open|close|lseek|pfd|cp|mv|cat|quit]\n");
     printf("Input: ");
     fgets(line, 128, stdin);
 
@@ -228,7 +228,7 @@ main(int argc, char *argv[ ])
       my_symlink(temp,tempPathName);
     }
     if(strcmp(cmd, "readlink")==0){
-      my_readlink();
+      printf("%s\n",my_readlink());
     }
     if(strcmp(cmd, "rm")==0){
       my_rm();

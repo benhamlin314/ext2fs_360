@@ -4,6 +4,7 @@ int write_file(){
   int fd, nbytes;
   fd = atoi(pathname);
   nbytes = strlen(tempPathName);
+  printf("%d is bytes to be written\n",nbytes);
   if(running->fd[fd] != 0){
     if(running->fd[fd]->mode == 1 || running->fd[fd]->mode == 2){
       return my_write(fd,tempPathName,nbytes);
@@ -99,38 +100,46 @@ int my_write(int fd, char buf[], int nbytes){
         }
       }
 
+      printf("Block was gotten\n");
       get_block(mip->dev, blk, writebuf);
       char *cp = writebuf + startbyte;
       int remain = BLKSIZE - startbyte;
 
-      if(remain == BLKSIZE){
+      if(nbytes >= BLKSIZE){
+        printf("BLKSIZE to write\n");
+        running->fd[fd]->offset += BLKSIZE;
         if(running->fd[fd]->offset > ip->i_size){
           ip->i_size += BLKSIZE;
         }
         strncpy(cp, buf, remain);
+        tot += BLKSIZE;
         nbytes -= BLKSIZE;
         remain -= BLKSIZE;
-        tot += BLKSIZE;
-        running->fd[fd]->offset += BLKSIZE;
+
+
         if(nbytes <= 0){
           break;
         }
       }
       else{
+        printf("less than BLKSIZE to write\n");
+        running->fd[fd]->offset += nbytes;
         if(running->fd[fd]->offset > ip->i_size){
-          ip->i_size += BLKSIZE;
+          ip->i_size += nbytes;
         }
         strncpy(cp, buf, nbytes);
+        tot += nbytes;
         nbytes -= nbytes;
         remain -= nbytes;
-        tot += nbytes;
-        running->fd[fd]->offset += nbytes;
+
+
       }
 
       put_block(mip->dev, blk, writebuf);
   }
   mip->dirty = 1;
   printf("Wrote %d characters to fd=%d\n",tot,fd);
+  return tot;
 }
 
 int my_cp(char *dest){
@@ -140,7 +149,8 @@ int my_cp(char *dest){
   strcpy(pathname, dest);//sets destination for Pathname
   int gd = open_file(1);
   if(fd == -1 && gd == -1){//both failed
-    printf("ERROR: copy failed\n");
+    printf("ERROR: copy failed both\n");
+    return -1;
   }
   else if(fd == -1){//only fd failed
     close_file(gd);
@@ -148,9 +158,17 @@ int my_cp(char *dest){
     return -1;
   }
   else if(gd == -1){//only gd failed
+    creat_file();
+    gd = open_file(1);
+    int tot = 0;
+    while( n = my_read(fd,buf,BLKSIZE)){
+      tot += my_write(gd,buf,n);
+    }
+    printf("%d is n\n",n);
     close_file(fd);
-    printf("ERROR: copy failed\n");
-    return -1;
+    close_file(gd);
+    printf("Total bytes copied %d\n",tot);
+    return tot;
   }
   else{//both succeeded
     int tot = 0;
@@ -166,9 +184,9 @@ int my_cp(char *dest){
 
 int my_mv(){
   int ino = getino(dev,pathname);
-  if(!ino){
+  if(ino){
     if(my_link(pathname,tempPathName)){
-      my_rm();
+      my_unlink(pathname);
     }
     else{
       printf("ERROR: move failed\n");

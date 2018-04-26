@@ -11,11 +11,11 @@ int open_file(int mode){
   int i=0;
   int j=0;
   //4) Check Inodes i_mode to verify Regular File And Permissions OK
-  if(mip->INODE.i_mode == 0x81A4){
+  if(mip->INODE.i_mode != 0x41ED){
     printf("Is File\n");
     for(i = 0; i < 10; i++){
       printf("Iteration: %d\n\n",i);
-      
+
       if(running->fd[i] == 0){ //There is NO File
 	printf("NO FILE\n");
 	for(j = 0; j < 10; j++){
@@ -118,7 +118,7 @@ int open_file(int mode){
   }
   iput(mip);
 }
-    
+
 int my_truncate(MINODE *mip){
   //Direct
   int i = 0;
@@ -139,7 +139,7 @@ int my_truncate(MINODE *mip){
 	bdealloc(dev,buf);
     }
   }
-  //Double Indirect 
+  //Double Indirect
   get_block(dev,mip->INODE.i_block[13],buf);
   for(int l = 0; l < 256; l++){
     get_block(dev,buf[l],indirect_buf);
@@ -168,13 +168,13 @@ int close_file(int fd){
     if (oftp->refCount > 0){
       return 0;
     }
-    
+
     MINODE *mip = oftp->mptr;
     mip->dirty=1;
     iput(mip);
     free(oftp);
-    
-    return 0; 
+
+    return 0;
   }
 }
 
