@@ -22,7 +22,8 @@ int rmdir(){
   if(ip->i_uid == running->uid ||  running->uid == 0){//checks to see if user owns dir or if user is super user getuid() is a systemcall
     printf("User can rmdir\n");
     if(ip->i_mode == 0x41ED){
-      if( mip->refCount == 0 ){
+      printf("Refcount is %d\n",mip->refCount);
+      if( mip->refCount == 1 ){
         if( ip->i_links_count == 2){//checks if not a dir or busy or not empty
           printf("Might be empty link count is %d\n", ip->i_links_count);
         	printf("Checking if truly empty\n");
@@ -34,29 +35,33 @@ int rmdir(){
         	dp = (DIR *)cp;
 
         	if(dp->rec_len == 12){//dir contains files
-        	  empty = 1;
+        	  empty = 0;
         	}
         	else{
-        	  empty = 0;//flag to check empty
+        	  empty = 1;//flag to check empty
         	}
           if(!empty){
             printf("ERROR: Dir not empty\n");
+            iput(mip);
             return -1;
           }
         }
         else{
           printf("ERROR: Dir not empty\n");
+          iput(mip);
           return -1;
         }
       }
       else{
         printf("ERROR: Dir is busy\n");
+        iput(mip);
         return -1;
       }
     }
     else
     {
       printf("ERROR: Not a dir\n");
+      iput(mip);
       return -1;
     }
     pip = iget(mip->dev, dp->inode);//dp already points to ..

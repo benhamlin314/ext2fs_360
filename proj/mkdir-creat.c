@@ -36,7 +36,7 @@ int make_dir(){
       cp += dp->rec_len;
       dp = (DIR *)cp;
     }
-      
+
     //*********** end add check
     mymkdir(pip, child);
     //Update pip
@@ -210,7 +210,7 @@ int creat_file(){
       cp += dp->rec_len;
       dp = (DIR *)cp;
     }
-      
+
     //*********** end add check
     my_creat(pip, child);
     //Update pip
@@ -223,6 +223,7 @@ int creat_file(){
   }
   else{ //Parent Is Not DIR
     printf("Parent Is Not A Directory Cannot Place File\n");
+    iput(pip);
     return -1;
   }
 }

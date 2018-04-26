@@ -58,7 +58,7 @@ my_iput(MINODE *mip)
   if(!mip->dirty){ //Not Changed Case
     return;
   }
- 
+
   /* write back */
   printf("my_iput ino: %d\n",mip->ino);
 
@@ -109,7 +109,7 @@ int my_search(MINODE *mip, char *name)
     printf("my_search: i_block[%d]=%d\n",i, ip->i_block[i]);
     if(ip->i_block[i] == 0)
       return 0;
-     
+
     //Get The i_block Load It Into sbuf For Parsing
     get_block(dev, ip->i_block[i], sbuf);
     dp = (DIR *)sbuf;
@@ -167,5 +167,6 @@ int my_getino(int dev, char *pathname)
     my_iput(mip);
     mip = my_iget(dev,ino);
   }
+  iput(mip);
   return ino;
 }

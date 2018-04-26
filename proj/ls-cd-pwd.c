@@ -2,12 +2,11 @@
 #include "globals.h"
 
 char buf[BLKSIZE];
-MINODE *mip;
-INODE *ip;
+
 
 int ls_file(int ino){
-  mip = iget(dev, ino);
-  ip = &(mip->INODE);
+  MINODE *mip = iget(dev, ino);
+  INODE *ip = &(mip->INODE);
   char *Permission = "rwxrwxrwx";
   printf("Permissions: ");
   for(int i = 0; i < 9; i++){
@@ -22,12 +21,12 @@ int ls_file(int ino){
   printf("%d ",ip->i_uid);
   printf("%d ",ip->i_gid);
   printf("%d ",ip->i_atime);
-
+  my_iput(mip);
 }
 
 int ls_dir(int ino){
-  mip = iget(dev, ino);
-  ip = &(mip->INODE);
+  MINODE * mip = iget(dev, ino);
+  INODE * ip = &(mip->INODE);
 
   char lsbuf[BLKSIZE], temp[256];
   char *cp;
@@ -46,6 +45,7 @@ int ls_dir(int ino){
     dp = (DIR *)cp;
 
   }
+  my_iput(mip);
 }
 
 int parse_path(char *path, char *name[256]){
@@ -61,51 +61,6 @@ int parse_path(char *path, char *name[256]){
 }
 
 int list_file(char *path){
-  /*MINODE *tip;
-  INODE *ip;
-  char *name[256];
-  int nlen = 0;
-  int cur = 0;
-  int ino =0;
-  char * temp;
-  if(path[0] == '/'){
-    tip = iget(dev,2);
-    ip = &(tip->INODE);
-  }
-  else{
-    tip=(MINODE *)running->cwd;
-  }
-  temp = strtok(path, "/");
-  name[nlen++]= temp;
-
-  while(temp = strtok(0,"/")){//parses path into name array
-    name[nlen++] = temp;
-  }
-
-  if(name[cur] == 0){
-    ls_dir(2);
-  }
-  else{
-    //make sure path exists
-    printf("Find path....\n");
-    for(cur=0;cur<nlen;cur++){
-      ino = search(ip,name[cur]);
-
-
-      if(!ino){
-	printf("Path not found at %s\n", name[cur]);
-	return -1;
-      }
-      tip = iget(dev, ino);
-      ip = &(tip->INODE);
-      if ((ip->i_mode & 0xF000) != 0x4000){
-	printf("ls failed: not a DIR\n");
-	return -1;
-      }
-      printf("Found ino: %d\n", ino);
-    }
-    printf("OK\n");
-*/
     int ino = 0;
     if(strlen(path)==0){
       ls_dir(running->cwd->ino);
@@ -128,12 +83,13 @@ int change_dir(char *path){
   char * temp;
   if(strcmp(path,"/")==0){
     tip = iget(dev,2);
+    my_iput(running->cwd);
     running->cwd = tip;
     return 0;
   }
   else{
     if(path[0] == '/'){
-    tip = iget(dev,2);
+      tip = iget(dev,2);
     }
     else{
       tip = running->cwd;
@@ -154,17 +110,20 @@ int change_dir(char *path){
     ino = search(&(tip->INODE),name[cur]);
     if(!ino){
       printf("Path not found at %s\n", name[cur]);
+      my_iput(tip);
       return -1;
     }
+    my_iput(tip);
     tip = iget(dev, ino);
     if ((tip->INODE.i_mode & 0xF000) != 0x4000){
       printf("ls failed: not a DIR\n");
+      my_iput(tip);
       return -1;
     }
     printf("Found ino: %d\n", ino);
   }
   printf("OK\n");
-
+  my_iput(running->cwd);
   running->cwd = tip;
 }
 
@@ -183,7 +142,7 @@ int rpwd(INODE *ip){
   dp = (DIR *)cp;
 
   //Grab Parent
-  mip = iget(dev,dp->inode);
+  MINODE *mip = iget(dev,dp->inode);
   ip = &(mip->INODE);
   //Grab Block
   get_block(dev,ip->i_block[0], buf);
@@ -208,14 +167,17 @@ int rpwd(INODE *ip){
   if(dp->inode == dp2->inode){ //Check . Against ..
     printf("/");
     if(strcmp(charArray,"..")==0){
+      my_iput(mip);
       return 0;
     }
     printf("%s/",charArray);
+    my_iput(mip);
     return 0;
   }
   else{
     rpwd(mip); //Otherwise Recursive Call Memory INODE Pointer
     printf("%s/",charArray);
+    my_iput(mip);
   }
 }
 
