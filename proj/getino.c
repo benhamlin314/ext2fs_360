@@ -167,6 +167,6 @@ int my_getino(int dev, char *pathname)
     my_iput(mip);
     mip = my_iget(dev,ino);
   }
-  iput(mip);
+  my_iput(mip);
   return ino;
 }

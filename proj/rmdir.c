@@ -147,7 +147,7 @@ int rm_child(MINODE * parent, char *name){
     //printf("%d size of removed record\n", size);
     //printf("3\n");
     while(size + cp2 + dp->rec_len < buf + BLKSIZE){//shifts the other dp's to the left so there are no gaps
-      cp += dpnext->rec_len;
+      cp += dp->rec_len;
       c = dpnext->name[dpnext->name_len];
       dpnext->name[dpnext->name_len] = 0;
       printf("Shifting %s to replace  %d \n", dpnext->name, dp->inode);
