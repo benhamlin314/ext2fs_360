@@ -6,7 +6,7 @@ int write_file(){
   nbytes = strlen(tempPathName);
   printf("%d is bytes to be written\n",nbytes);
   if(running->fd[fd] != 0){
-    if(running->fd[fd]->mode == 1 || running->fd[fd]->mode == 2){
+    if(running->fd[fd]->mode == 1 || running->fd[fd]->mode == 2 || running->fd[fd]->mode == 3){
       return my_write(fd,tempPathName,nbytes);
     }
     else{

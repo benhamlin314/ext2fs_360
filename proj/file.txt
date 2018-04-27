@@ -824,7 +824,7 @@ main(int argc, char *argv[ ])
 
   //printf("hit a key to continue : "); getchar();
   while(1){
-    printf("Commands: [ls|cd|pwd|mkdir|creat|rmdir|rm|stat|chmod|link|unlink|touch|open|close|lseek|pfd|quit]\n");
+    printf("Commands: [ls|cd|pwd|mkdir|creat|rmdir|rm|stat|chmod|link|unlink|touch|open|close|lseek|pfd|cp|mv|cat|quit]\n");
     printf("Input: ");
     fgets(line, 128, stdin);
 
@@ -897,7 +897,7 @@ main(int argc, char *argv[ ])
       my_symlink(temp,tempPathName);
     }
     if(strcmp(cmd, "readlink")==0){
-      my_readlink();
+      printf("%s\n",my_readlink());
     }
     if(strcmp(cmd, "rm")==0){
       my_rm();
@@ -1211,116 +1211,121 @@ int open_file(int mode){
   //2) Get pathnames inumber
   //3) Get Its MINODE Pointer
   int ino = getino(dev,pathname);
-  MINODE *mip = iget(dev,ino);
-  int i=0;
-  int j=0;
-  //4) Check Inodes i_mode to verify Regular File And Permissions OK
-  if(mip->INODE.i_mode != 0x41ED){
-    printf("Is File\n");
-    for(i = 0; i < 10; i++){
-      printf("Iteration: %d\n\n",i);
+  if(ino){
+    MINODE *mip = iget(dev,ino);
+    int i=0;
+    int j=0;
+    //4) Check Inodes i_mode to verify Regular File And Permissions OK
+    if(mip->INODE.i_mode != 0x41ED){
+      printf("Is File\n");
+      for(i = 0; i < 10; i++){
+        printf("Iteration: %d\n\n",i);
 
-      if(running->fd[i] == 0){ //There is NO File
-	printf("NO FILE\n");
-	for(j = 0; j < 10; j++){
-	  printf("Sub Iteration: %d\n",j);
-	  if(running->fd[j] == 0){
-	    OFT * oftp = (OFT *)malloc(sizeof(OFT));
-	    oftp->mode = mode;
-	    oftp->refCount = 1;
-	    mip->INODE.i_atime = time(0L);
-	    oftp->mptr = mip;
-	    switch(mode){
-	    case 0:
-	      printf("Set Mode 0\n");
-	      oftp->offset = 0;
-	      break;
-	    case 1:
-	      printf("Set Mode 1\n");
-	      truncate(mip);
-	      mip->INODE.i_mtime = time(0L);
-	      oftp->offset = 0;
-	      break;
-	    case 2:
-	      printf("Set Mode 2\n");
-	      mip->INODE.i_mtime = time(0L);
-	      oftp->offset = 0;
-	      break;
-	    case 3:
-	      printf("Set Mode 3\n");
-	      mip->INODE.i_mtime = time(0L);
-	      oftp->offset = mip->INODE.i_size;
-	      break;
-	    default:
-	      printf("Invalid Mode\n");
-	      return -1;
-	    }
-	    //Set Running Equal To OFTP and Return The i Value
-	    running->fd[j] = oftp;
-	    return j;
-	    }
-	}
-      }
-      else{ //There Is File Check
-	printf("Ran into File, Check\n");
-	if(running->fd[i]->mptr->ino == ino){
-	  if(running->fd[i]->mode == 1){ //Write Mode
-	    printf("Open For Incorrect Mode\n");
-	    return -1;
-	  }
-	  else if(running->fd[i]->mode == 2){ //Read Write Mode
-	    printf("Open For Incorrect Mode\n");
-	    return -1;
-	  }
-	  else if(running->fd[i]->mode == 3){ //Append Mode
-	    printf("Open For Incorrect Mode\n");
-	    return -1;
-	  }
-	  else if(running->fd[i]->mode == 0 && mode != 0){
-	    printf("File Is Open For Read\n");
-	    return -1;
-	  }
-	  else{ //Must Be Read Mode If This Is Reached
-	    for(j = 0; j < 10; j++){
-	      if(running->fd[j] == 0){
-		OFT * oftp = (OFT *)malloc(sizeof(OFT));
-		oftp->mode = mode;
-		oftp->refCount = 1;
-		mip->INODE.i_atime = time(0L);
-		oftp->mptr = mip;
-		switch(mode){
-		case 0:
-		  printf("Case 0\n");
-		  oftp->offset = 0;
-		  break;
-		case 1:
-		  printf("Case 1\n");
-		  truncate(mip);
-		  oftp->offset = 0;
-		  break;
-		case 2:
-		  printf("Case 2\n");
-		  oftp->offset = 0;
-		  break;
-		case 3:
-		  printf("Case 3\n");
-		  oftp->offset = mip->INODE.i_size;
-		  break;
-		default:
-		  printf("Invalid Mode\n");
-		  return -1;
-		}
-		//Set Running Equal To OFTP and Return The i Value
-		running->fd[j] = oftp;
-		return j;
-	      }
-	    }
-	  }
-	}
+        if(running->fd[i] == 0){ //There is NO File
+        	printf("NO FILE\n");
+        	for(j = 0; j < 10; j++){
+        	  printf("Sub Iteration: %d\n",j);
+        	  if(running->fd[j] == 0){
+        	    OFT * oftp = (OFT *)malloc(sizeof(OFT));
+        	    oftp->mode = mode;
+        	    oftp->refCount = 1;
+        	    mip->INODE.i_atime = time(0L);
+        	    oftp->mptr = mip;
+        	    switch(mode){
+        	    case 0:
+        	      printf("Set Mode 0\n");
+        	      oftp->offset = 0;
+        	      break;
+        	    case 1:
+        	      printf("Set Mode 1\n");
+        	      truncate(mip);
+        	      mip->INODE.i_mtime = time(0L);
+        	      oftp->offset = 0;
+        	      break;
+        	    case 2:
+        	      printf("Set Mode 2\n");
+        	      mip->INODE.i_mtime = time(0L);
+        	      oftp->offset = 0;
+        	      break;
+        	    case 3:
+        	      printf("Set Mode 3\n");
+        	      mip->INODE.i_mtime = time(0L);
+        	      oftp->offset = mip->INODE.i_size;
+        	      break;
+        	    default:
+        	      printf("Invalid Mode\n");
+        	      return -1;
+        	    }
+        	    //Set Running Equal To OFTP and Return The i Value
+        	    running->fd[j] = oftp;
+        	    return j;
+        	    }
+        	}
+              }
+              else{ //There Is File Check
+        	printf("Ran into File, Check\n");
+        	if(running->fd[i]->mptr->ino == ino){
+        	  if(running->fd[i]->mode == 1){ //Write Mode
+        	    printf("Open For Incorrect Mode\n");
+        	    return -1;
+        	  }
+        	  else if(running->fd[i]->mode == 2){ //Read Write Mode
+        	    printf("Open For Incorrect Mode\n");
+        	    return -1;
+        	  }
+        	  else if(running->fd[i]->mode == 3){ //Append Mode
+        	    printf("Open For Incorrect Mode\n");
+        	    return -1;
+        	  }
+        	  else if(running->fd[i]->mode == 0 && mode != 0){
+        	    printf("File Is Open For Read\n");
+        	    return -1;
+        	  }
+        	  else{ //Must Be Read Mode If This Is Reached
+        	    for(j = 0; j < 10; j++){
+        	      if(running->fd[j] == 0){
+        		OFT * oftp = (OFT *)malloc(sizeof(OFT));
+        		oftp->mode = mode;
+        		oftp->refCount = 1;
+        		mip->INODE.i_atime = time(0L);
+        		oftp->mptr = mip;
+        		switch(mode){
+        		case 0:
+        		  printf("Case 0\n");
+        		  oftp->offset = 0;
+        		  break;
+        		case 1:
+        		  printf("Case 1\n");
+        		  truncate(mip);
+        		  oftp->offset = 0;
+        		  break;
+        		case 2:
+        		  printf("Case 2\n");
+        		  oftp->offset = 0;
+        		  break;
+        		case 3:
+        		  printf("Case 3\n");
+        		  oftp->offset = mip->INODE.i_size;
+        		  break;
+        		default:
+        		  printf("Invalid Mode\n");
+        		  return -1;
+        		}
+        		//Set Running Equal To OFTP and Return The i Value
+        		running->fd[j] = oftp;
+        		return j;
+        	      }
+        	    }
+        	  }
+        	}
+        }
       }
     }
+    iput(mip);
   }
-  iput(mip);
+  else{
+    return -1;
+  }
 }
 
 int my_truncate(MINODE *mip){
@@ -1435,7 +1440,7 @@ int read_file(){
   int fd, nbytes;
   fd = atoi(pathname);
   nbytes = atoi(tempPathName);
-  char buf[(256+12+256*256)*BLKSIZE];
+  char buf[(256+12+256*256)*BLKSIZE];//buf large enough to hold the entire file
   if(running->fd[fd] != 0){
     if(running->fd[fd]->mode == 0 || running->fd[fd]->mode == 2){
       return my_read(fd,buf,nbytes);
@@ -1454,11 +1459,15 @@ int my_read(int fd, char * buf, int nbytes){
   MINODE *mip, *mip2;
   mip = running->cwd;
   int count = 0, blk;
+  if(nbytes > running->fd[fd]->mptr->INODE.i_size){
+    nbytes = running->fd[fd]->mptr->INODE.i_size;//if nbytes is more than size set it to size
+  }
   int available = running->fd[fd]->mptr->INODE.i_size - running->fd[fd]->offset;
   char  *cp = buf, readbuf[BLKSIZE];
   mip2 = running->fd[fd]->mptr;
 
   while(nbytes && available){
+    //maps logic block to physical block
     int lbk = running->fd[fd]->offset / BLKSIZE;
     int startbyte = running->fd[fd]->offset % BLKSIZE;
 
@@ -1468,7 +1477,7 @@ int my_read(int fd, char * buf, int nbytes){
     else if(lbk >= 12 && lbk < 256 + 12){
       int indirect[256];
       get_block(mip2->dev,mip2->INODE.i_block[12],indirect);
-      blk = indirect[lbk];
+      blk = indirect[lbk-12];
     }
     else{
       int dbl_indirect[256];
@@ -1483,35 +1492,41 @@ int my_read(int fd, char * buf, int nbytes){
         }
       }
     }
+    if(blk == 0){
+      return count;
+    }
+    //end mapping
 
     get_block(mip->dev, blk, readbuf);
-
-    int optimizer = 64;//change this to alter optimization make it a
 
     char *store = readbuf + startbyte;
     int remain = BLKSIZE - startbyte;
     while(remain > 0){
-      if(nbytes-optimizer <= 0 || available-optimizer <= 0){
-        break;
+      if(nbytes-BLKSIZE > 0){
+        //printf("BLKSIZE to read\n");
+        strncpy(buf, store, BLKSIZE);
+        count += BLKSIZE;
+        nbytes -= BLKSIZE;
+        available -= BLKSIZE;
+        remain -= BLKSIZE;
+        running->fd[fd]->offset += BLKSIZE;
+
+        if(nbytes <= 0){
+          break;
+        }
       }
-      strncpy(buf,store,optimizer);
-      running->fd[fd]->offset+=optimizer;
-      count += optimizer;
-      available -= optimizer;
-      nbytes -= optimizer;
-      remain -= optimizer;
-    }
-    //transfers left over when less than 32 nbytes
-    while(remain > 0){
-      if(nbytes <= 0 || available <= 0){
-        break;
+      else{
+        //printf("less than BLKSIZE to read\n");
+        strncpy(buf, store, nbytes);
+        count += nbytes;
+        available -= nbytes;
+        remain -= nbytes;
+        running->fd[fd]->offset += nbytes;
+        nbytes -= nbytes;
+        if(nbytes <= 0){
+          break;
+        }
       }
-      *store++ = *cp++;
-      running->fd[fd]->offset++;
-      count++;
-      available--;
-      nbytes--;
-      remain--;
     }
   }
   return count;
@@ -1526,7 +1541,7 @@ int cat_file(){
     while( n = my_read(fd, buf, BLKSIZE)){
       for(i=0;i<n;i++){
         if(buf[i] == '\\'){
-          if(buf[i+1] == 'n'){
+          if(buf[i+1] == 'n'){//if new line print new line
             putchar('\n');
             i++;
           }
@@ -1535,6 +1550,7 @@ int cat_file(){
         }
       }
     }
+    printf("\n");//print new line
     close_file(fd);
   }
   else{
@@ -1966,7 +1982,7 @@ int write_file(){
   nbytes = strlen(tempPathName);
   printf("%d is bytes to be written\n",nbytes);
   if(running->fd[fd] != 0){
-    if(running->fd[fd]->mode == 1 || running->fd[fd]->mode == 2){
+    if(running->fd[fd]->mode == 1 || running->fd[fd]->mode == 2 || running->fd[fd]->mode == 3){
       return my_write(fd,tempPathName,nbytes);
     }
     else{
@@ -2107,9 +2123,11 @@ int my_cp(char *dest){
   char buf[BLKSIZE];
   int fd = open_file(0);//opens pathname for read
   strcpy(pathname, dest);//sets destination for Pathname
+  //printf("pathname = %s\n", pathname);
   int gd = open_file(1);
+  //printf("fd is %d, gd is %d\n",fd, gd);
   if(fd == -1 && gd == -1){//both failed
-    printf("ERROR: copy failed\n");
+    printf("ERROR: copy failed both\n");
     return -1;
   }
   else if(fd == -1){//only fd failed
@@ -2118,18 +2136,22 @@ int my_cp(char *dest){
     return -1;
   }
   else if(gd == -1){//only gd failed
+    strcpy(pathname, dest);
+    //printf("pathname = %s\n", pathname);
     creat_file();
     gd = open_file(1);
     int tot = 0;
     while( n = my_read(fd,buf,BLKSIZE)){
       tot += my_write(gd,buf,n);
     }
+    printf("%d is n\n",n);
     close_file(fd);
     close_file(gd);
     printf("Total bytes copied %d\n",tot);
     return tot;
   }
   else{//both succeeded
+    printf("Both fd opened\n");
     int tot = 0;
     while( n = my_read(fd,buf,BLKSIZE)){
       tot += my_write(gd,buf,n);
@@ -2143,9 +2165,9 @@ int my_cp(char *dest){
 
 int my_mv(){
   int ino = getino(dev,pathname);
-  if(!ino){
+  if(ino){
     if(my_link(pathname,tempPathName)){
-      my_rm();
+      my_unlink(pathname);
     }
     else{
       printf("ERROR: move failed\n");

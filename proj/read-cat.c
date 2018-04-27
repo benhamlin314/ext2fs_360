@@ -61,15 +61,15 @@ int my_read(int fd, char * buf, int nbytes){
       return count;
     }
     //end mapping
-    get_block(mip->dev, blk, readbuf);
 
+    get_block(mip->dev, blk, readbuf);
 
     char *store = readbuf + startbyte;
     int remain = BLKSIZE - startbyte;
     while(remain > 0){
       if(nbytes-BLKSIZE > 0){
         //printf("BLKSIZE to read\n");
-        strncpy(buf, readbuf, BLKSIZE);
+        strncpy(buf, store, BLKSIZE);
         count += BLKSIZE;
         nbytes -= BLKSIZE;
         available -= BLKSIZE;
@@ -82,7 +82,7 @@ int my_read(int fd, char * buf, int nbytes){
       }
       else{
         //printf("less than BLKSIZE to read\n");
-        strncpy(buf, readbuf, nbytes);
+        strncpy(buf, store, nbytes);
         count += nbytes;
         available -= nbytes;
         remain -= nbytes;
